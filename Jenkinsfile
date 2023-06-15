@@ -30,7 +30,7 @@ pipeline {
             steps {
                 script {
                     // Replace /path/to/snowsql with the absolute path to the SnowSQL executable
-                        sh 'sudo /home/ec2-user/bin/snowsql -a ${SNOWFLAKE_ACCOUNT} -u ${SNOWFLAKE_USER} -p '${SNOWFLAKE_PASSWORD}' -c "USE ROLE ACCOUNTADMIN; USE DATABASE ${SNOWFLAKE_DATABASE}; USE SCHEMA ${SNOWFLAKE_SCHEMA}
+                        sh 'sudo /home/ec2-user/bin/snowsql -a ${SNOWFLAKE_ACCOUNT} -u ${SNOWFLAKE_USER} -p '${SNOWFLAKE_PASSWORD}' -c "USE ROLE ACCOUNTADMIN; USE DATABASE ${SNOWFLAKE_DATABASE}; USE SCHEMA ${SNOWFLAKE_SCHEMA}"
 
                     // Snowflake import query
                     def importQuery = """
