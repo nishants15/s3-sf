@@ -23,7 +23,12 @@ pipeline {
           def stage_name = 's3_stage'
           def table_name = 'stg_campaign1'
 
+          // Add the Snowflake JDBC driver to the classpath
           def jdbcDriverPath = '/opt/snowflake-jdbc-3.13.7.jar' // Path to Snowflake JDBC driver JAR file
+          def loader = new URLClassLoader([new URL("file:${jdbcDriverPath}")], this.getClass().getClassLoader())
+          def driverClass = loader.loadClass('net.snowflake.client.jdbc.SnowflakeDriver')
+          DriverManager.registerDriver(new DriverWrapper(driverClass.newInstance()))
+
           def jdbcUrl = "jdbc:snowflake://${snowflake_account}/?user=${snowflake_user}&password=${snowflake_password}"
 
           // Create or replace the stage
@@ -34,7 +39,7 @@ pipeline {
           """
 
           // Execute the CREATE STAGE query
-          sqlExecute(jdbcDriverPath, jdbcUrl, createStageQuery)
+          sqlExecute(jdbcUrl, createStageQuery)
 
           // Snowflake COPY command
           def copyCommand = """
@@ -46,25 +51,16 @@ pipeline {
           """
 
           // Execute the COPY command
-          sqlExecute(jdbcDriverPath, jdbcUrl, copyCommand)
+          sqlExecute(jdbcUrl, copyCommand)
         }
       }
     }
   }
 }
 
-@GrabConfig(systemClassLoader = true)
-@Grab('net.snowflake:snowflake-jdbc:3.13.7')
-
 import java.sql.DriverManager
-import net.snowflake.client.jdbc.SnowflakeDriver
 
-def sqlExecute(jdbcDriverPath, jdbcUrl, query) {
-  def driverLoader = new GroovyClassLoader(getClass().getClassLoader())
-  driverLoader.addURL(new File(jdbcDriverPath).toURI().toURL())
-  def driverClass = driverLoader.loadClass('net.snowflake.client.jdbc.SnowflakeDriver')
-  DriverManager.registerDriver(new SnowflakeDriver())
-
+def sqlExecute(jdbcUrl, query) {
   def connection = DriverManager.getConnection(jdbcUrl)
   def statement = connection.createStatement()
 
