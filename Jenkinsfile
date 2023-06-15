@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        PATH = "$PATH:/home/ec2-user/bin"
-    }
- 
     stages {
         stage('Setup') {
             steps {
@@ -29,8 +25,15 @@ pipeline {
             }
             steps {
                 script {
-                    // Replace /path/to/snowsql with the absolute path to the SnowSQL executable
-                    sh "sudo /home/ec2-user/bin/snowsql -a ${SNOWFLAKE_ACCOUNT} -u ${SNOWFLAKE_USER} -p '${SNOWFLAKE_PASSWORD}' -c 'USE ROLE ACCOUNTADMIN; USE DATABASE ${SNOWFLAKE_DATABASE}; USE SCHEMA ${SNOWFLAKE_SCHEMA};'"
+                    // Create a temporary password file
+                    sh "echo ${SNOWFLAKE_PASSWORD} > snowflake_password.txt"
+
+                    // Run queries before COPY command
+                    sh """
+                        snowsql -a ${SNOWFLAKE_ACCOUNT} -u ${SNOWFLAKE_USER} -f snowflake_password.txt -c 'USE ROLE ACCOUNTADMIN;'
+                        snowsql -a ${SNOWFLAKE_ACCOUNT} -u ${SNOWFLAKE_USER} -f snowflake_password.txt -c 'USE DATABASE ${SNOWFLAKE_DATABASE};'
+                        snowsql -a ${SNOWFLAKE_ACCOUNT} -u ${SNOWFLAKE_USER} -f snowflake_password.txt -c 'USE SCHEMA ${SNOWFLAKE_SCHEMA};'
+                    """
 
                     // Snowflake import query
                     def importQuery = """
@@ -45,8 +48,13 @@ pipeline {
                     env.AWS_ACCESS_KEY_ID = AWS_ACCESS_KEY_ID
                     env.AWS_SECRET_ACCESS_KEY = AWS_SECRET_ACCESS_KEY
 
-                    // Replace /path/to/snowsql with the absolute path to the SnowSQL executable                
-                    sh "sudo /home/ec2-user/bin/snowsql -a ${SNOWFLAKE_ACCOUNT} -u ${SNOWFLAKE_USER} -p '${SNOWFLAKE_PASSWORD}' -d ${SNOWFLAKE_DATABASE} -w ${SNOWFLAKE_WAREHOUSE} -s ${SNOWFLAKE_SCHEMA} -c 'USE ROLE ACCOUNTADMIN; ${importQuery}'"
+                    // Run Snowflake import query
+                    sh """
+                        snowsql -a ${SNOWFLAKE_ACCOUNT} -u ${SNOWFLAKE_USER} -f snowflake_password.txt -d ${SNOWFLAKE_DATABASE} -w ${SNOWFLAKE_WAREHOUSE} -s ${SNOWFLAKE_SCHEMA} -c "${importQuery}"
+                    """
+
+                    // Remove the password file
+                    sh "rm snowflake_password.txt"
                 }
             }
         }
