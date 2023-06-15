@@ -20,8 +20,8 @@ pipeline {
                 SNOWFLAKE_STAGE = 's3_stage'
                 FILE_FORMAT = 'csv_format'
                 TABLE_NAME = 'stg_campaign1'
-                AWS_ACCESS_KEY_ID = credentials('aws_access_key_id')
-                AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+                AWS_ACCESS_KEY_ID = 'ASIA5CA4YRK65W4BWEDY'
+                AWS_SECRET_ACCESS_KEY = 'c+ZHKYlJX8Z0bEj2biCiaHj+Ogl4ZtTAyKCrbiUg'
             }
             steps {
                 script {
