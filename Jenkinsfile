@@ -13,7 +13,7 @@ pipeline {
             environment {
                 SNOWFLAKE_ACCOUNT = 'kx23846.ap-southeast-1'
                 SNOWFLAKE_USER = 'mark'
-                SNOWFLAKE_PASSWORD = env.SNOWFLAKE_PASSWORD
+                SNOWFLAKE_PASSWORD = "${env.SNOWFLAKE_PASSWORD}"
                 SNOWFLAKE_DATABASE = 'dev_convertr'
                 SNOWFLAKE_WAREHOUSE = 'comput_wh'
                 SNOWFLAKE_SCHEMA = 'stage'
