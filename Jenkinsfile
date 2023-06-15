@@ -5,7 +5,7 @@ pipeline {
     stage('Checkout') {
       steps {
         // Clone the GitHub repository
-        git branch: 'integration', credentialsId: 'GH-credentials', url: 'https://github.com/nishants15/S3-INT-SF.git'
+        git branch: 'integration', credentialsId: 'GH-credentials', url: 'https://github.com/nishants15/s3-sf.git'
       }
     }
 
