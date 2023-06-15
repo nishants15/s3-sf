@@ -27,7 +27,7 @@ pipeline {
           def jdbcDriverPath = '/opt/snowflake-jdbc-3.13.7.jar' // Path to Snowflake JDBC driver JAR file
           def loader = new URLClassLoader([new URL("file:${jdbcDriverPath}")], this.getClass().getClassLoader())
           def driverClass = loader.loadClass('net.snowflake.client.jdbc.SnowflakeDriver')
-          DriverManager.registerDriver(new DriverWrapper(driverClass.newInstance()))
+          DriverManager.registerDriver(driverClass.newInstance())
 
           def jdbcUrl = "jdbc:snowflake://${snowflake_account}/?user=${snowflake_user}&password=${snowflake_password}"
 
