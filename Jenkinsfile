@@ -12,18 +12,18 @@ pipeline {
     stage('Transfer CSV to Snowflake') {
       steps {
         script {
-          snowflake_user = 'mark'
-          snowflake_password = 'Mark6789*'
-          snowflake_account = 'kx23846.ap-southeast-1'
-          snowflake_database = 'dev_convertr'
-          snowflake_schema = 'stage'
-          s3_bucket_name = 'snowflake-input11'
-          file_format_name = 'my_file_format'
-          warehouse = 'comput_wh'
-          stage_name = 's3_stage'
-          table_name = 'stg_campaign1'
+          def snowflake_user = 'mark'
+          def snowflake_password = 'Mark6789*'
+          def snowflake_account = 'kx23846.ap-southeast-1'
+          def snowflake_database = 'dev_convertr'
+          def snowflake_schema = 'stage'
+          def s3_bucket_name = 'snowflake-input11'
+          def file_format_name = 'my_file_format'
+          def warehouse = 'comput_wh'
+          def stage_name = 's3_stage'
+          def table_name = 'stg_campaign1'
 
-          def jdbcDriverPath = def jdbcDriverPath = '/opt/snowflake-jdbc-3.13.7.jar' Path to Snowflake JDBC driver JAR file
+          def jdbcDriverPath = '/opt/snowflake-jdbc-3.13.7.jar' // Path to Snowflake JDBC driver JAR file
           def jdbcUrl = "jdbc:snowflake://${snowflake_account}/?user=${snowflake_user}&password=${snowflake_password}"
 
           // Create or replace the stage
