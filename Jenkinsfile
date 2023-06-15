@@ -53,10 +53,17 @@ pipeline {
   }
 }
 
+@GrabConfig(systemClassLoader = true)
+@Grab('net.snowflake:snowflake-jdbc:3.13.7')
+
+import java.sql.DriverManager
+import net.snowflake.client.jdbc.SnowflakeDriver
+
 def sqlExecute(jdbcDriverPath, jdbcUrl, query) {
-  def driverLoader = new URLClassLoader([new File(jdbcDriverPath).toURI().toURL()])
-  def driverClass = Class.forName('net.snowflake.client.jdbc.SnowflakeDriver', true, driverLoader)
-  DriverManager.registerDriver(new DriverWrapper(driverClass.newInstance()))
+  def driverLoader = new GroovyClassLoader(getClass().getClassLoader())
+  driverLoader.addURL(new File(jdbcDriverPath).toURI().toURL())
+  def driverClass = driverLoader.loadClass('net.snowflake.client.jdbc.SnowflakeDriver')
+  DriverManager.registerDriver(new SnowflakeDriver())
 
   def connection = DriverManager.getConnection(jdbcUrl)
   def statement = connection.createStatement()
