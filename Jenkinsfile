@@ -23,12 +23,13 @@ pipeline {
           def stage_name = 's3_stage'
           def table_name = 'stg_campaign1'
 
-          // Load the Snowflake JDBC driver
-          def jdbcDriverPath = '/opt/snowflake-jdbc-3.13.7.jar' // Path to Snowflake JDBC driver JAR file
-          def classLoader = this.getClass().getClassLoader()
-          def addURLMethod = classLoader.class.getDeclaredMethod('addURL', [URL] as Class[])
-          addURLMethod.setAccessible(true)
-          addURLMethod.invoke(classLoader, new File(jdbcDriverPath).toURI().toURL())
+          // Download and load the Snowflake JDBC driver
+          def jdbcDriverUrl = 'https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.13.7/snowflake-jdbc-3.13.7.jar'
+          def jdbcDriverPath = downloadJdbcDriver(jdbcDriverUrl)
+
+          // Register the JDBC driver
+          classLoader = new URLClassLoader([new File(jdbcDriverPath).toURI().toURL()])
+          DriverManager.registerDriver(classLoader.loadClass('net.snowflake.client.jdbc.SnowflakeDriver').newInstance())
 
           def jdbcUrl = "jdbc:snowflake://${snowflake_account}/?user=${snowflake_user}&password=${snowflake_password}"
 
@@ -59,8 +60,24 @@ pipeline {
   }
 }
 
+import java.io.File
 import java.net.URL
 import java.net.URLClassLoader
+import java.nio.file.Files
+
+def downloadJdbcDriver(url) {
+  def tempDir = Files.createTempDirectory('jdbc')
+  def tempFile = new File(tempDir.toFile(), 'snowflake-jdbc.jar')
+
+  tempFile.withOutputStream { outputStream ->
+    new URL(url).openStream().withStream { inputStream ->
+      outputStream << inputStream
+    }
+  }
+
+  return tempFile.getAbsolutePath()
+}
+
 import java.sql.DriverManager
 
 def sqlExecute(jdbcUrl, query) {
