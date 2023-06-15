@@ -1,3 +1,5 @@
+@Grab('net.snowflake:snowflake-jdbc:3.13.7')
+
 pipeline {
   agent any
 
@@ -23,11 +25,8 @@ pipeline {
           def stage_name = 's3_stage'
           def table_name = 'stg_campaign1'
 
-          // Add the Snowflake JDBC driver to the classpath
-          def jdbcDriverPath = '/opt/snowflake-jdbc-3.13.7.jar' // Path to Snowflake JDBC driver JAR file
-          def loader = new URLClassLoader([new URL("file:${jdbcDriverPath}")], this.getClass().getClassLoader())
-          def driverClass = loader.loadClass('net.snowflake.client.jdbc.SnowflakeDriver')
-          DriverManager.registerDriver(driverClass.newInstance())
+          // Register the Snowflake JDBC driver
+          Class.forName('net.snowflake.client.jdbc.SnowflakeDriver')
 
           def jdbcUrl = "jdbc:snowflake://${snowflake_account}/?user=${snowflake_user}&password=${snowflake_password}"
 
@@ -71,3 +70,4 @@ def sqlExecute(jdbcUrl, query) {
     connection?.close()
   }
 }
+
