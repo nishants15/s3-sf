@@ -30,9 +30,7 @@ pipeline {
             steps {
                 script {
                     // Replace /path/to/snowsql with the absolute path to the SnowSQL executable
-                    sh """
-                        /home/ec2-user/bin/snowsql -a ${SNOWFLAKE_ACCOUNT} -u ${SNOWFLAKE_USER} -p '${SNOWFLAKE_PASSWORD}' -c "USE ROLE ACCOUNTADMIN; USE DATABASE ${SNOWFLAKE_DATABASE}; USE SCHEMA ${SNOWFLAKE_SCHEMA};"
-                    """
+                        sh 'sudo /home/ec2-user/bin/snowsql -a ${SNOWFLAKE_ACCOUNT} -u ${SNOWFLAKE_USER} -p '${SNOWFLAKE_PASSWORD}' -c "USE ROLE ACCOUNTADMIN; USE DATABASE ${SNOWFLAKE_DATABASE}; USE SCHEMA ${SNOWFLAKE_SCHEMA}
 
                     // Snowflake import query
                     def importQuery = """
@@ -47,10 +45,8 @@ pipeline {
                     env.AWS_ACCESS_KEY_ID = AWS_ACCESS_KEY_ID
                     env.AWS_SECRET_ACCESS_KEY = AWS_SECRET_ACCESS_KEY
 
-                    // Replace /path/to/snowsql with the absolute path to the SnowSQL executable
-                    sh """
-                        /home/ec2-user/bin/snowsql -a ${SNOWFLAKE_ACCOUNT} -u ${SNOWFLAKE_USER} -p '${SNOWFLAKE_PASSWORD}' -d ${SNOWFLAKE_DATABASE} -w ${SNOWFLAKE_WAREHOUSE} -s ${SNOWFLAKE_SCHEMA} -c "USE ROLE ACCOUNTADMIN; ${importQuery}"
-                    """
+                    // Replace /path/to/snowsql with the absolute path to the SnowSQL executable                
+                        sh 'sudo /home/ec2-user/bin/snowsql -a ${SNOWFLAKE_ACCOUNT} -u ${SNOWFLAKE_USER} -p '${SNOWFLAKE_PASSWORD}' -d ${SNOWFLAKE_DATABASE} -w ${SNOWFLAKE_WAREHOUSE} -s ${SNOWFLAKE_SCHEMA} -c "USE ROLE ACCOUNTADMIN; ${importQuery}"
                 }
             }
         }
