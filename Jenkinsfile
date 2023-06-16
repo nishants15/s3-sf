@@ -11,6 +11,10 @@ def stage_name = 's3_stage'
 pipeline {
   agent any
 
+  environment {
+    PATH = "/root/bin:$PATH"
+  }
+
   stages {
     stage('File Transfer') {
       steps {
