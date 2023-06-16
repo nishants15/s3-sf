@@ -1,63 +1,32 @@
+def snowflake_account = 'kx23846.ap-southeast-1'
+def snowflake_user = 'mark'
+def snowflake_password = 'Mark6789*'
+def snowflake_warehouse = 'my_warehouse'
+def snowflake_database = 'my_database'
+def snowflake_schema = 'my_schema'
+def s3_bucket_name = 'snowflake-input11'
+def file_format_name = 'my_file_format'
+def stage_name = 's3_stage'
+
 pipeline {
-    agent any
+  agent any
 
-    environment {
-        SNOWFLAKE_USER = 'mark'
-        SNOWFLAKE_PASSWORD = 'Mark6789*'
-        SNOWFLAKE_ACCOUNT = 'kx23846.ap-southeast-1'
-        SNOWFLAKE_DATABASE = 'dev_convertr'
-        SNOWFLAKE_SCHEMA = 'stage'
-        STAGE_NAME = 's3_stage'
-        TABLE_NAME = 'stg_campaign1'
+  stages {
+    stage('File Transfer') {
+      steps {
+        script {
+          // Create the file format in Snowflake
+          sh "snowsql -c connections.example -a ${snowflake_account} -u ${snowflake_user} -p ${snowflake_password} -w ${snowflake_warehouse} -d ${snowflake_database} -s ${snowflake_schema} -q \"CREATE FILE FORMAT ${file_format_name} TYPE = 'CSV' FIELD_DELIMITER = ',' SKIP_HEADER = 1;\""
+
+          // Create the stage in Snowflake
+          sh "snowsql -c connections.example -a ${snowflake_account} -u ${snowflake_user} -p ${snowflake_password} -w ${snowflake_warehouse} -d ${snowflake_database} -s ${snowflake_schema} -q \"CREATE STAGE ${stage_name} URL = 's3://${s3_bucket_name}/';\""
+
+          // Run the copy command to transfer data from S3 to Snowflake
+          sh "snowsql -c connections.example -a ${snowflake_account} -u ${snowflake_user} -p ${snowflake_password} -w ${snowflake_warehouse} -d ${snowflake_database} -s ${snowflake_schema} -q \"COPY INTO my_table FROM @${stage_name} FILE_FORMAT = ${file_format_name};\""
+        }
+      }
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                // Checkout the Jenkinsfile from the Git repository
-                checkout([$class: 'GitSCM', branches: [[name: 'int']], userRemoteConfigs: [[url: 'https://github.com/nishants15/s3-sf.git']], credentialsId: 'GH-credentials'])
-            }
-        }
-
-        stage('Create or Replace File Format') {
-            steps {
-                script {
-                    def query = "CREATE OR REPLACE FILE FORMAT my_csv_format " +
-                                "TYPE = CSV FIELD_DELIMITER = ',' SKIP_HEADER = 1 " +
-                                "FIELD_OPTIONALLY_ENCLOSED_BY = '\"' NULL_IF = ('NULL', 'null') " +
-                                "EMPTY_FIELD_AS_NULL = TRUE " +
-                                "ERROR_ON_COLUMN_COUNT_MISMATCH = FALSE"
-
-                    sh "snowsql -u ${env.SNOWFLAKE_USER} -p ${env.SNOWFLAKE_PASSWORD} -a ${env.SNOWFLAKE_ACCOUNT} -d ${env.SNOWFLAKE_DATABASE} -s ${env.SNOWFLAKE_SCHEMA} -q \"${query}\""
-                }
-            }
-        }
-
-        stage('Create or Replace Stage') {
-            steps {
-                script {
-                    def query = "CREATE OR REPLACE STAGE ${env.SNOWFLAKE_SCHEMA}.${env.STAGE_NAME} " +
-                                "URL = 's3://snowflake-input11' " +
-                                "STORAGE_INTEGRATION = s3_int " +
-                                "FILE_FORMAT = dev_convertr.stage.my_csv_format"
-
-                    sh "snowsql -u ${env.SNOWFLAKE_USER} -p ${env.SNOWFLAKE_PASSWORD} -a ${env.SNOWFLAKE_ACCOUNT} -d ${env.SNOWFLAKE_DATABASE} -s ${env.SNOWFLAKE_SCHEMA} -q \"${query}\""
-                }
-            }
-        }
-
-        stage('Run COPY Command') {
-            steps {
-                script {
-                    def query = "COPY INTO ${env.SNOWFLAKE_SCHEMA}.${env.TABLE_NAME} " +
-                                "FROM (SELECT \$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9,\$10,\$11,\$12,\$13,\$14,\$15,\$16,\$17,\$18,\$19,\$20, " +
-                                "METADATA\$FILENAME, CURRENT_TIMESTAMP(), 'Not Processed', NULL " +
-                                "FROM @${env.STAGE_NAME}) " +
-                                "PATTERN = '.*Campaign1.*[.]csv'"
-
-                    sh "snowsql -u ${env.SNOWFLAKE_USER} -p ${env.SNOWFLAKE_PASSWORD} -a ${env.SNOWFLAKE_ACCOUNT} -d ${env.SNOWFLAKE_DATABASE} -s ${env.SNOWFLAKE_SCHEMA} -q \"${query}\""
-                }
-            }
-        }
-    }
+    // Additional stages or steps can be added as needed
+  }
 }
