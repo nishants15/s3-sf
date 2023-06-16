@@ -22,7 +22,7 @@ pipeline {
           sh "snowsql -c connections.example -a ${snowflake_account} -u ${snowflake_user} -p ${snowflake_password} -w ${snowflake_warehouse} -d ${snowflake_database} -s ${snowflake_schema} -q \"CREATE STAGE ${stage_name} URL = 's3://${s3_bucket_name}/';\""
 
           // Run the copy command to transfer data from S3 to Snowflake
-          sh "snowsql -c connections.example -a ${snowflake_account} -u ${snowflake_user} -p ${snowflake_password} -w ${snowflake_warehouse} -d ${snowflake_database} -s ${snowflake_schema} -q \"COPY INTO my_table FROM @${stage_name} FILE_FORMAT = ${file_format_name};\""
+          sh "snowsql -c connections.example -a ${snowflake_account} -u ${snowflake_user} -p ${snowflake_password} -w ${snowflake_warehouse} -d ${snowflake_database} -s ${snowflake_schema} -q \"COPY INTO my_table FROM @${stage_name} FILE_FORMAT = '${file_format_name}';\""
         }
       }
     }
