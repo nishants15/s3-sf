@@ -22,9 +22,9 @@ pipeline {
           def stage_name = 's3_stage'
           
           // Set AWS credentials using environment variables or AWS CLI configuration
-          env.AWS_ACCESS_KEY_ID = credentials('aws-credentials').accessKeyId
-          env.AWS_SECRET_ACCESS_KEY = credentials('aws-credentials').secretAccessKey
-          env.AWS_DEFAULT_REGION = 'ap-southeast-1'
+          env.AWS_ACCESS_KEY_ID = AWS_ACCESS_KEY_ID
+          env.AWS_SECRET_ACCESS_KEY = AWS_SECRET_ACCESS_KEY
+          env.AWS_DEFAULT_REGION = AWS_DEFAULT_REGION
 
           // Download the Snowflake CLI
           sh "curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/2.13/linux_x86_64/snowsql-2.13.0-linux_x86_64.tar.gz"
