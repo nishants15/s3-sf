@@ -12,7 +12,7 @@ pipeline {
   agent any
 
   environment {
-    PATH = "/root/bin:$PATH"
+    PATH = """$PATH:/root/bin"""
   }
 
   stages {
