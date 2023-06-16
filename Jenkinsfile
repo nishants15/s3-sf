@@ -27,7 +27,7 @@ pipeline {
           env.AWS_SECRET_ACCESS_KEY = env.AWS_SECRET_ACCESS_KEY
 
           // Download the Snowflake CLI
-          sh "curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/2.13/linux_x86_64/snowsql-2.13.0-linux_x86_64.tar.gz"
+          sh "curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/2.13/linux_x86_64/snowsql-2.12.0-linux_x86_64.tar.gz"
           sh "tar -xzf snowsql-2.13.0-linux_x86_64.tar.gz"
 
           // Configure Snowflake CLI with credentials
