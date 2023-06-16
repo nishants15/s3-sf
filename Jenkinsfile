@@ -23,15 +23,15 @@ pipeline {
             steps {
                 script {
                     // Install SnowSQL (Snowflake CLI)
-                    sh 'sudo curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.6-linux_x86_64.bash'
-                    sh 'sudo chmod +x snowsql-1.2.6-linux_x86_64.bash'
-                    sh 'sudo ./snowsql-1.2.6-linux_x86_64.bash -e'
+                    sh 'wget https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.6-linux_x86_64.tar.gz'
+                    sh 'tar -xvf snowsql-1.2.6-linux_x86_64.tar.gz'
+                    sh 'sudo snowsql-1.2.6-linux_x86_64/snowsql -e'
 
                     // Create Snowflake stage
-                    sh "snowsql -u ${env.SNOWFLAKE_USER} -p ${env.SNOWFLAKE_PASSWORD} -a ${env.SNOWFLAKE_ACCOUNT} -d ${env.SNOWFLAKE_DATABASE} -s ${env.SNOWFLAKE_SCHEMA} -w <your_warehouse> -q \"CREATE OR REPLACE STAGE ${env.STAGE_NAME} URL = 's3://${env.S3_BUCKET_NAME}' FILE_FORMAT = (FORMAT_NAME = '${env.FILE_FORMAT_NAME}')\""
+                    sh "sudo snowsql-1.2.6-linux_x86_64/snowsql -u ${env.SNOWFLAKE_USER} -p ${env.SNOWFLAKE_PASSWORD} -a ${env.SNOWFLAKE_ACCOUNT} -d ${env.SNOWFLAKE_DATABASE} -s ${env.SNOWFLAKE_SCHEMA} -w compute_wh -q \"CREATE OR REPLACE STAGE ${env.STAGE_NAME} URL = 's3://${env.S3_BUCKET_NAME}' FILE_FORMAT = (FORMAT_NAME = '${env.FILE_FORMAT_NAME}')\""
 
                     // Run COPY command
-                    sh "snowsql -u ${env.SNOWFLAKE_USER} -p ${env.SNOWFLAKE_PASSWORD} -a ${env.SNOWFLAKE_ACCOUNT} -d ${env.SNOWFLAKE_DATABASE} -s ${env.SNOWFLAKE_SCHEMA} -w <your_warehouse> -q \"COPY INTO <target_table> FROM @${env.STAGE_NAME} FILE_FORMAT = (FORMAT_NAME = '${env.FILE_FORMAT_NAME}')\""
+                    sh "sudo snowsql-1.2.6-linux_x86_64/snowsql -u ${env.SNOWFLAKE_USER} -p ${env.SNOWFLAKE_PASSWORD} -a ${env.SNOWFLAKE_ACCOUNT} -d ${env.SNOWFLAKE_DATABASE} -s ${env.SNOWFLAKE_SCHEMA} -w compute_wh -q \"COPY INTO stg_campaign1 FROM @${env.STAGE_NAME} FILE_FORMAT = (FORMAT_NAME = '${env.FILE_FORMAT_NAME}')\""
                 }
             }
         }
