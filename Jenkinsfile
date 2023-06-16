@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        def snowflake_user = env.SNOWFLAKE_USER
-        def snowflake_password = env.SNOWFLAKE_PASSWORD
+        SNOWFLAKE_USER = env.SNOWFLAKE_USER
+        SNOWFLAKE_PASSWORD = env.SNOWFLAKE_PASSWORD
         SNOWFLAKE_ACCOUNT = 'kx23846.ap-southeast-1'
         SNOWFLAKE_DATABASE = 'dev_convertr'
         SNOWFLAKE_SCHEMA = 'stage'
