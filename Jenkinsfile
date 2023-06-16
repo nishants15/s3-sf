@@ -31,7 +31,7 @@ pipeline {
           sh "tar -xzf snowsql-2.13.0-linux_x86_64.tar.gz"
 
           // Configure Snowflake CLI with credentials
-          sh "echo -e \"account = '${snowflake_account}'\nusername = '${snowflake_user}'\npassword = '${snowflake_password}'\" > ~/.snowsql/config
+          sh """echo -e '[connections]\\naccountname = ${snowflakeAccount}\\nusername = ${snowflakeUser}\\npassword = ${snowflakePassword}' > ~/.snowsql/config"""
           sh "./snowsql-2.13.0-linux_x86_64/snowsql -a ${snowflake_account} -u ${snowflake_user} -w ${snowflake_database} -s ${snowflake_schema} -r ci-cd-setup -d ${snowflake_database} -q 'USE WAREHOUSE COMPUT_WH'"
 
           // Create the Snowflake stage pointing to S3 bucket
