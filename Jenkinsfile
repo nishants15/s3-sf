@@ -16,12 +16,12 @@ pipeline {
         stage('Create Snowflake File Format') {
             steps {
                 script {
-                    snowflakeQuery("CREATE OR REPLACE FILE FORMAT my_csv_format
-                        TYPE = CSV FIELD_DELIMITER = ',' SKIP_HEADER = 1
-                        FIELD_OPTIONALLY_ENCLOSED_BY = '\"'
-                        NULL_IF = ('NULL', 'null')
-                        EMPTY_FIELD_AS_NULL = TRUE
-                        ERROR_ON_COLUMN_COUNT_MISMATCH = FALSE;")
+                    snowflakeQuery(create or replace file format my_csv_format
+                            type = csv field_delimiter = ',' skip_header = 1
+                            field_optionally_enclosed_by = '"'
+                            null_if = ('NULL', 'null') 
+                            empty_field_as_null = true
+                            error_on_column_count_mismatch=false;")
                 }
             }
         }
