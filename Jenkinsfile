@@ -12,8 +12,9 @@ pipeline {
     stage('Setup Snowflake Stage') {
       steps {
         script {
-          def snowflake_user = 'mark'
-          def snowflake_password = 'Mark6789*'
+          // Retrieve Snowflake credentials from environment variables
+          def snowflake_user = env.SNOWFLAKE_USER
+          def snowflake_password = env.SNOWFLAKE_PASSWORD
           def snowflake_account = 'kx23846.ap-southeast-1'
           def snowflake_database = 'dev_convertr'
           def snowflake_schema = 'stage'
@@ -21,10 +22,9 @@ pipeline {
           def file_format_name = 'my_file_format'
           def stage_name = 's3_stage'
           
-          // Set AWS credentials using environment variables or AWS CLI configuration
-          env.AWS_ACCESS_KEY_ID = AWS_ACCESS_KEY_ID
-          env.AWS_SECRET_ACCESS_KEY = AWS_SECRET_ACCESS_KEY
-          env.AWS_DEFAULT_REGION = AWS_DEFAULT_REGION
+          // Set AWS credentials using environment variables
+          env.AWS_ACCESS_KEY_ID = env.AWS_ACCESS_KEY_ID
+          env.AWS_SECRET_ACCESS_KEY = env.AWS_SECRET_ACCESS_KEY
 
           // Download the Snowflake CLI
           sh "curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/2.13/linux_x86_64/snowsql-2.13.0-linux_x86_64.tar.gz"
@@ -43,8 +43,9 @@ pipeline {
     stage('Transfer CSV to Snowflake') {
       steps {
         script {
-          def snowflake_user = 'mark'
-          def snowflake_password = 'Mark6789*'
+          // Retrieve Snowflake credentials from environment variables
+          def snowflake_user = env.SNOWFLAKE_USER
+          def snowflake_password = env.SNOWFLAKE_PASSWORD
           def snowflake_account = 'kx23846.ap-southeast-1'
           def snowflake_database = 'dev_convertr'
           def snowflake_schema = 'stage'
