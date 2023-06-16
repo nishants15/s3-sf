@@ -23,10 +23,10 @@ pipeline {
             steps {
                 script {
                     // Download SnowSQL binary zip
-                    sh 'wget https://snowflake-snowsql-1.2.27-1.x86_64.rpm.zip'
+                    sh wget 'https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.26-linux_x86_64.zip'
 
                     // Install SnowSQL (Snowflake CLI)
-                    sh 'unzip snowsql-1.2.27-linux_x86_64.zip'
+                    sh 'unzip snowsql-1.2.26-linux_x86_64.zip'
                     sh 'sudo ./snowsql-*/snowsql -e'
 
                     // Create Snowflake stage
