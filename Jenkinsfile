@@ -9,7 +9,7 @@ pipeline {
       }
     }
 
-    stage('Transfer CSV to Snowflake') {
+    stage('Setup Snowflake Stage') {
       steps {
         script {
           def snowflake_user = 'mark'
@@ -19,29 +19,47 @@ pipeline {
           def snowflake_schema = 'stage'
           def s3_bucket_name = 'snowflake-input11'
           def file_format_name = 'my_file_format'
-          def warehouse = 'comput_wh'
+          def stage_name = 's3_stage'
+          
+          // Set AWS credentials using environment variables or AWS CLI configuration
+          env.AWS_ACCESS_KEY_ID = credentials('aws-credentials').accessKeyId
+          env.AWS_SECRET_ACCESS_KEY = credentials('aws-credentials').secretAccessKey
+          env.AWS_DEFAULT_REGION = 'ap-southeast-1'
+
+          // Download the Snowflake CLI
+          sh "curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/2.13/linux_x86_64/snowsql-2.13.0-linux_x86_64.tar.gz"
+          sh "tar -xzf snowsql-2.13.0-linux_x86_64.tar.gz"
+
+          // Configure Snowflake CLI with credentials
+          sh "echo -e \"account = '${snowflake_account}'\nusername = '${snowflake_user}'\npassword = '${snowflake_password}'\" > ~/.snowsql/config
+          sh "./snowsql-2.13.0-linux_x86_64/snowsql -a ${snowflake_account} -u ${snowflake_user} -w ${snowflake_database} -s ${snowflake_schema} -r ci-cd-setup -d ${snowflake_database} -q 'USE WAREHOUSE COMPUT_WH'"
+
+          // Create the Snowflake stage pointing to S3 bucket
+          sh "./snowsql-2.13.0-linux_x86_64/snowsql -c ci-cd-setup -f -q \"CREATE STAGE ${stage_name} URL='s3://${s3_bucket_name}' FILE_FORMAT = (FORMAT_NAME = '${file_format_name}')\""
+        }
+      }
+    }
+
+    stage('Transfer CSV to Snowflake') {
+      steps {
+        script {
+          def snowflake_user = 'mark'
+          def snowflake_password = 'Mark6789*'
+          def snowflake_account = 'kx23846.ap-southeast-1'
+          def snowflake_database = 'dev_convertr'
+          def snowflake_schema = 'stage'
           def stage_name = 's3_stage'
           def table_name = 'stg_campaign1'
 
-          // Download and load the Snowflake JDBC driver
-          def jdbcDriverUrl = 'https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.13.7/snowflake-jdbc-3.13.7.jar'
-          def jdbcDriverPath = downloadJdbcDriver(jdbcDriverUrl)
+          // Download the Snowflake JDBC driver
+          def snowflakeJdbcUrl = 'https://repo1.maven.org/maven2/net/snowflake/snowflake-jdbc/3.15.1/snowflake-jdbc-3.15.1.jar'
+          sh "sudo mkdir -p /opt/"
+          sh "sudo curl -L ${snowflakeJdbcUrl} -o /opt/snowflake-jdbc.jar"
 
-          // Register the JDBC driver
-          classLoader = new URLClassLoader([new File(jdbcDriverPath).toURI().toURL()])
-          DriverManager.registerDriver(classLoader.loadClass('net.snowflake.client.jdbc.SnowflakeDriver').newInstance())
-
+          // Set up Snowflake JDBC connection properties
           def jdbcUrl = "jdbc:snowflake://${snowflake_account}/?user=${snowflake_user}&password=${snowflake_password}"
-
-          // Create or replace the stage
-          def createStageQuery = """
-            CREATE OR REPLACE STAGE ${stage_name}
-            URL='s3://${s3_bucket_name}/'
-            FILE_FORMAT=${file_format_name};
-          """
-
-          // Execute the CREATE STAGE query
-          sqlExecute(jdbcUrl, createStageQuery)
+          def driverPath = '/opt/snowflake-jdbc.jar'
+          def driverClass = 'net.snowflake.client.jdbc.SnowflakeDriver'
 
           // Snowflake COPY command
           def copyCommand = """
@@ -52,35 +70,22 @@ pipeline {
             PATTERN='.*Campaign1.*[.]csv';
           """
 
-          // Execute the COPY command
-          sqlExecute(jdbcUrl, copyCommand)
+          // Execute the COPY command using Snowflake JDBC driver
+          sqlExecute(jdbcUrl, driverClass, driverPath, copyCommand)
         }
       }
     }
   }
 }
 
-import java.io.File
-import java.net.URL
-import java.net.URLClassLoader
-import java.nio.file.Files
-
-def downloadJdbcDriver(url) {
-  def tempDir = Files.createTempDirectory('jdbc')
-  def tempFile = new File(tempDir.toFile(), 'snowflake-jdbc.jar')
-
-  tempFile.withOutputStream { outputStream ->
-    new URL(url).openStream().withStream { inputStream ->
-      outputStream << inputStream
-    }
-  }
-
-  return tempFile.getAbsolutePath()
-}
-
 import java.sql.DriverManager
 
-def sqlExecute(jdbcUrl, query) {
+def sqlExecute(jdbcUrl, driverClass, driverPath, query) {
+  // Add Snowflake JDBC driver to classpath
+  def loader = new URLClassLoader([new URL("file:${driverPath}")], this.getClass().getClassLoader())
+  def driver = loader.loadClass(driverClass)
+  DriverManager.registerDriver(driver.newInstance())
+
   def connection = DriverManager.getConnection(jdbcUrl)
   def statement = connection.createStatement()
 
