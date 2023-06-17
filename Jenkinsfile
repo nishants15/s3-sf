@@ -1,10 +1,11 @@
 pipeline {
     agent any
     stages {
-        stage('Clone repository') {
-            steps {
-                sh 'https://github.com/nishants15/s3-sf.git'
-            }
+        stage('Checkout') {
+        steps {
+            // Clone the GitHub repository
+            git branch: 'int', credentialsId: 'GH-credentials', url: 'https://github.com/nishants15/s3-sf.git'
+        }
         }
         stage("Install required libraries") {
             steps {
