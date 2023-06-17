@@ -1,40 +1,39 @@
 pipeline {
     agent any
-
-    environment {
-        SNOWFLAKE_USER = 'mark'
-        SNOWFLAKE_PASSWORD = 'Mark6789*'
-        SNOWFLAKE_ACCOUNT = 'kx23846.ap-southeast-1'
-        SNOWFLAKE_DATABASE = 'dev_convertr'
-        SNOWFLAKE_SCHEMA = 'stage'
-        S3_BUCKET_NAME = 'snowflake-input11'
-        FILE_FORMAT_NAME = 'my_file_format'
-        STAGE_NAME = 's3_stage'
-    }
-
     stages {
-        stage('Clone Repository') {
+        stage('Clone repository') {
             steps {
-                git branch: 'int', credentialsId: 'GH-credentials', url: 'https://github.com/nishants15/s3-sf.git'
+                sh 'https://github.com/nishants15/s3-sf.git'
             }
         }
-
-         stage('Transfer Data to Snowflake') {
+        stage("Install required libraries") {
             steps {
-                script {
-                    // Download SnowSQL binary zip
-                    sh curl 'https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.26-linux_x86_64.zip'
-
-                    // Install SnowSQL (Snowflake CLI)
-                    sh 'unzip snowsql-1.2.26-linux_x86_64.zip'
-                    sh 'sudo ./snowsql-*/snowsql -e'
-
-                    // Create Snowflake stage
-                    sh "sudo ./snowsql-*/snowsql -u ${env.SNOWFLAKE_USER} -p ${env.SNOWFLAKE_PASSWORD} -a ${env.SNOWFLAKE_ACCOUNT} -d ${env.SNOWFLAKE_DATABASE} -s ${env.SNOWFLAKE_SCHEMA} -w compute_wh -q \"CREATE OR REPLACE STAGE ${env.STAGE_NAME} URL = 's3://${env.S3_BUCKET_NAME}' FILE_FORMAT = (FORMAT_NAME = '${env.FILE_FORMAT_NAME}')\""
-
-                    // Run COPY command
-                    sh "sudo ./snowsql-*/snowsql -u ${env.SNOWFLAKE_USER} -p ${env.SNOWFLAKE_PASSWORD} -a ${env.SNOWFLAKE_ACCOUNT} -d ${env.SNOWFLAKE_DATABASE} -s ${env.SNOWFLAKE_SCHEMA} -w compute_wh -q \"COPY INTO stg_campaign1 FROM @${env.STAGE_NAME} FILE_FORMAT = (FORMAT_NAME = '${env.FILE_FORMAT_NAME}')\""
+                sh 'pip install snowflake-connector-python'
+                sh 'pip install awscli'
+                sh 'curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.23-linux_x86_64.bash'
+                sh 'chmod +x snowsql-1.2.23-linux_x86_64.bash'
+                sh './snowsql-1.2.23-linux_x86_64.bash'
+            }
+        }
+        stage("Authenticate with AWS and Snowflake") {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'aws_credentials', variable: 'credentials')
+                ]) {
+                    sh 'echo "SNOWSQL_ACCOUNT=kx23846.ap-southeast-1" > snowsql_config'
+                    sh 'echo "SNOWSQL_USER=mark" >> snowsql_config'
+                    sh 'echo "SNOWSQL_PASSWORD=$SNOWFLAKE_PASSWORD" >> snowsql_config'
+                    sh 'echo "SNOWSQL_ROLE=accountadmin" >> snowsql_config'
+                    sh 'echo "SNOWSQL_WAREHOUSE=compute_wh" >> snowsql_config'
+                    sh 'AWS_ACCESS_KEY_ID=$credentials_USR AWS_SECRET_ACCESS_KEY=$credentials_PSW aws configure set default.region us-east-1'
+                    
+                    sh 'snowsql -c snowsql_config -f create_stage.sql'
                 }
+            }
+        }
+        stage('Copy data from S3 to Snowflake') {
+            steps {
+                sh 'snowsql -c snowsql_config -f copy_data.sql'
             }
         }
     }
