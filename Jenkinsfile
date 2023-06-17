@@ -7,13 +7,7 @@ pipeline {
             git branch: 'int', credentialsId: 'GH-credentials', url: 'https://github.com/nishants15/s3-sf.git'
         }
         }
-        stage("Install required libraries") {
-            steps {
-                sh 'curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.27-linux_x86_64.bash'
-                sh 'chmod +x snowsql-1.2.27-linux_x86_64.bash'
-                sh './snowsql-1.2.27-linux_x86_64.bash'
-            }
-        }
+       
         stage("Authenticate with AWS and Snowflake") {
             steps {
                 withCredentials([
