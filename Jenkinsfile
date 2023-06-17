@@ -11,8 +11,7 @@ pipeline {
             steps {
                 sh 'pip install snowflake-connector-python'
                 sh 'pip install awscli'
-                sh 'wget https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.26-linux_x86_64.zip'
-                sh 'unzip snowsql-1.2.26-linux_x86_64.zip'
+                sh 'curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.26-linux_x86_64.bash'
                 sh 'chmod +x snowsql-1.2.26-linux_x86_64.bash'
                 sh './snowsql-1.2.26-linux_x86_64.bash'
             }
