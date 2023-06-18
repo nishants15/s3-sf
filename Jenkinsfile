@@ -17,14 +17,12 @@ pipeline {
                 sh 'echo "SNOWSQL_DATABASE=dev_convertr" >> snowsql_config'
                 sh 'echo "SNOWSQL_SCHEMA=stage" >> snowsql_config'
 
-                sh 'export PATH=$PATH:/path/to/snowsql' // Replace /path/to/snowsql with the actual path to snowsql
-                sh 'snowsql -c snowsql_config -f create_stage.sql'
+                sh '~/bin/snowsql -c snowsql_config -f create_stage.sql'
             }
         }
         stage('Copy data from S3 to Snowflake') {
             steps {
-                sh 'export PATH=$PATH:/path/to/snowsql' // Replace /path/to/snowsql with the actual path to snowsql
-                sh 'snowsql -c snowsql_config -f copy_data.sql'
+                sh '~/bin/snowsql -c snowsql_config -f copy_data.sql'
             }
         }
     }
