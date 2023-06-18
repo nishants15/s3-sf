@@ -20,14 +20,15 @@ pipeline {
                 sh 'sudo chmod +w /home/snowsql_rt.log_bootstrap'
 
                 // Use sudo with -E option to preserve environment variables
-                sh 'sudo -E snowsql -c snowsql_config -f create_stage.sql'
+                sh "sudo -E snowsql -a kx23846.ap-southeast-1 -u mark -p ${env.snowflake_password} -r accountadmin -d dev_convertr -s stage -f create_stage.sql"
+
             }
         }
 
         stage('Copy data from S3 to Snowflake') {
             steps {
                 // Use sudo with -E option to preserve environment variables
-                sh 'sudo -E snowsql -c snowsql_config -f copy_data.sql'
+                sh "sudo -E snowsql -a kx23846.ap-southeast-1 -u mark -p ${env.snowflake_password} -r accountadmin -d dev_convertr -s stage -f copy_data.sql'
             }
         }
     }
