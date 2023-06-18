@@ -16,12 +16,12 @@ pipeline {
                 sh 'echo "SNOWSQL_WAREHOUSE=compute_wh" >> snowsql_config'
 
                 // Use sudo to run snowsql command with root privileges
-                sh 'sudo /home/ec2-user/bin/snowsql -c snowsql_config -f create_stage.sql'
+                sh 'sudo -E /home/ec2-user/bin/snowsql -c snowsql_config -f create_stage.sql'
             }
         }
         stage('Copy data from S3 to Snowflake') {
             steps {
-                sh 'sudo /home/ec2-user/bin/snowsql -c snowsql_config -f copy_data.sql'
+                sh 'sudo -E /home/ec2-user/bin/snowsql -c snowsql_config -f copy_data.sql'
             }
         }
     }
