@@ -28,7 +28,7 @@ pipeline {
         stage('Copy data from S3 to Snowflake') {
             steps {
                 // Use sudo with -E option to preserve environment variables
-                sh 'sudo -E snowsql -a kx23846.ap-southeast-1 -u mark -p $SNOWSQL_PASSWORD -r accountadmin -w compute_wh -d dev_convertr -s stage -f copy_data.sql"
+                sh 'sudo -E snowsql -a kx23846.ap-southeast-1 -u mark -p $SNOWSQL_PASSWORD -r accountadmin -w compute_wh -d dev_convertr -s stage -f copy_data.sql'
             }
         }
     }
