@@ -16,13 +16,13 @@ pipeline {
                 sh 'echo "SNOWSQL_WAREHOUSE=compute_wh" >> snowsql_config'
 
                 // Use sudo with -E option to preserve environment variables
-                sh 'sudo -E sh -c "source snowsql_config && /home/ec2-user/bin/snowsql -c snowsql_config -f create_stage.sql"'
+                sh 'sudo -E /home/ec2-user/bin/snowsql -a kx23846.ap-southeast-1 -u mark -p $SNOWFLAKE_PASSWORD -r accountadmin -w compute_wh -d dev_convertr -s stage -f create_stage.sql'
             }
         }
 
         stage('Copy data from S3 to Snowflake') {
             steps {
-                sh 'sudo -E /home/ec2-user/bin/snowsql -c snowsql_config -f copy_data.sql'
+                sh 'sudo -E /home/ec2-user/bin/snowsql -f copy_data.sql'
             }
         }
     }
