@@ -17,12 +17,12 @@ pipeline {
                 sh 'echo "SNOWSQL_DATABASE=dev_convertr" >> snowsql_config'
                 sh 'echo "SNOWSQL_SCHEMA=stage" >> snowsql_config'
 
-                sh '~/bin/snowsql -c snowsql_config -f create_stage.sql'
+                sh '/home/ec2-user/bin/snowsql -c snowsql_config -f create_stage.sql'
             }
         }
         stage('Copy data from S3 to Snowflake') {
             steps {
-                sh '~/bin/snowsql -c snowsql_config -f copy_data.sql'
+                sh '/home/ec2-user/bin/snowsql -c snowsql_config -f copy_data.sql'
             }
         }
     }
