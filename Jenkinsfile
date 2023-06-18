@@ -16,7 +16,7 @@ pipeline {
                 sh 'echo "SNOWSQL_WAREHOUSE=compute_wh" >> snowsql_config'
 
                 // Use sudo with -E option to preserve environment variables
-                 sh "sudo -E /home/ec2-user/bin/snowsql -a kx23846.ap-southeast-1 -u mark -S $SNOWFLAKE_PASSWORD -r accountadmin -w compute_wh -d dev_convertr -s stage -f create_stage.sql"
+                 sh 'echo $SNOWFLAKE_PASSWORD | sudo -S -E /home/ec2-user/bin/snowsql -f create_stage.sql'
             }
         }
 
