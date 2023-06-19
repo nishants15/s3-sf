@@ -18,10 +18,23 @@ pipeline {
             }
         }
 
-        stage('Create stagee') {
+        stage('Connection establishment') {
             steps {
                 // Use sudo with -E option to preserve environment variables
-                sh "/root/bin/snowsql -c my_connection -q \"create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input11' STORAGE_INTEGRATION = s3_int FILE_FORMAT = dev_convertr.stage.my_file_format\""
+                sh "/root/bin/snowsql -c my_connection"
+            }
+        }
+
+        stage('Create Snowflake Stage') {
+            steps {
+                // Use sudo with -E option to preserve environment variables
+                sh """
+                    /root/bin/snowsql -c my_connection -q \\
+                    "create or replace stage dev_convertr.stage.s3_stage \\
+                    url='s3://snowflake-input11' \\
+                    STORAGE_INTEGRATION = s3_int \\
+                    FILE_FORMAT = dev_convertr.stage.my_file_format"
+                """
             }
         }
     }
