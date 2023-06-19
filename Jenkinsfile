@@ -21,6 +21,7 @@ pipeline {
         stage('Connection establishment') {
             steps {
                 // Use sudo with -E option to preserve environment variables
+                sh 'cat snowsql_config' // Print the content of the snowsql_config file
                 sh "snowsql -c my_connection"
             }
         }
