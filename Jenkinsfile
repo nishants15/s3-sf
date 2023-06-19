@@ -14,7 +14,6 @@ pipeline {
                 sh "echo 'SNOWSQL_PASSWORD=${env.SNOWSQL_PASSWORD}' >> snowsql_config"
                 sh 'echo "SNOWSQL_ROLE=accountadmin" >> snowsql_config'
                 sh 'echo "SNOWSQL_WAREHOUSE=compute_wh" >> snowsql_config'
-
             }
         }
 
@@ -35,6 +34,12 @@ pipeline {
                     STORAGE_INTEGRATION = s3_int \\
                     FILE_FORMAT = dev_convertr.stage.my_file_format"
                 """
+            }
+        }
+
+        stage('Run SQL Script') {
+            steps {
+                sh 'sudo -u ec2-user snowsql -c my_connection -f copy_data.sql'
             }
         }
     }
