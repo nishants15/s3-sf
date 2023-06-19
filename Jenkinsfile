@@ -22,7 +22,7 @@ pipeline {
             steps {
                 // Use sudo with -E option to preserve environment variables
                 sh 'cat snowsql_config' // Print the content of the snowsql_config file
-                sh "snowsql -c my_connection"
+                sh "root/bin/snowsql -c my_connection"
             }
         }
 
@@ -30,7 +30,7 @@ pipeline {
             steps {
                 // Use sudo with -E option to preserve environment variables
                 sh """
-                    snowsql -c my_connection -q \\
+                    root/bin/snowsql -c my_connection -q \\
                     "create or replace stage dev_convertr.stage.s3_stage \\
                     url='s3://snowflake-input11' \\
                     STORAGE_INTEGRATION = s3_int \\
