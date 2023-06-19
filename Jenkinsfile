@@ -15,8 +15,12 @@ pipeline {
                 sh 'echo "SNOWSQL_ROLE=accountadmin" >> snowsql_config'
                 sh 'echo "SNOWSQL_WAREHOUSE=compute_wh" >> snowsql_config'
 
+                // Adjust ownership and permissions
+                sh 'sudo chown -R ec2-user:ec2-user /home/snowsql_rt.log_bootstrap'
+                sh 'sudo chmod +w /home/snowsql_rt.log_bootstrap'
+
                 // Use sudo with -E option to preserve environment variables
-                sh "sudo -u ec2-user -E snowsql -c my_connection -f create_stage.sql"
+                sh sh "sudo -u ec2-user -E snowsql -c my_connection -f create_stage.sql"
 
             }
         }
