@@ -30,7 +30,7 @@ pipeline {
         stage('Copy data from S3 to Snowflake') {
             steps {
                 // Use sudo with -E option to preserve environment variables
-                sh 'sudo -u ec2-user -E snowsql -c my_connection -f copy_data.sql'
+                sh "sudo -u ec2-user -E snowsql -c my_connection -f copy_data.sql"
             }
         }
     }
