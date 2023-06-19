@@ -9,7 +9,7 @@ pipeline {
         }
         stage("Authenticate with Snowflake") {
             steps {
-                sh 'echo "SNOWSQL_ACCOUNT=kx23846.ap-southeast-1" > snowsql_config'
+                sh 'echo "SNOWSQL_ACCOUNT=itb89569.ap-southeast-1" > snowsql_config'
                 sh 'echo "SNOWSQL_USER=mark" >> snowsql_config'
                 sh "echo 'SNOWSQL_PASSWORD=${env.SNOWSQL_PASSWORD}' >> snowsql_config"
                 sh 'echo "SNOWSQL_ROLE=accountadmin" >> snowsql_config'
@@ -20,7 +20,7 @@ pipeline {
                 sh 'sudo chmod +w /home/snowsql_rt.log_bootstrap'
 
                 // Use sudo with -E option to preserve environment variables
-                sh 'sudo -E snowsql -a kx23846.ap-southeast-1 -u mark -p $SNOWSQL_PASSWORD -r accountadmin -w compute_wh -d dev_convertr -s stage -f create_stage.sql'
+                sh 'sudo -E snowsql -a itb89569.ap-southeast-1 -u mark -p $SNOWSQL_PASSWORD -r accountadmin -w compute_wh -d dev_convertr -s stage -f create_stage.sql'
 
             }
         }
@@ -28,7 +28,7 @@ pipeline {
         stage('Copy data from S3 to Snowflake') {
             steps {
                 // Use sudo with -E option to preserve environment variables
-                sh 'sudo -E snowsql -a kx23846.ap-southeast-1 -u mark -p $SNOWSQL_PASSWORD -r accountadmin -w compute_wh -d dev_convertr -s stage -f copy_data.sql'
+                sh 'sudo -E snowsql -a itb89569.ap-southeast-1 -u mark -p $SNOWSQL_PASSWORD -r accountadmin -w compute_wh -d dev_convertr -s stage -f copy_data.sql'
             }
         }
     }
