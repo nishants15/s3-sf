@@ -15,13 +15,10 @@ pipeline {
                 sh 'echo "SNOWSQL_ROLE=accountadmin" >> snowsql_config'
                 sh 'echo "SNOWSQL_WAREHOUSE=compute_wh" >> snowsql_config'
 
-                // Use sudo with -E option to preserve environment variables
-                sh "/root/bin/snowsql -c my_connection -f create_stage.sql"
-
             }
         }
 
-        stage('Copy data from S3 to Snowflake') {
+        stage('Create stagee') {
             steps {
                 // Use sudo with -E option to preserve environment variables
                 sh "/root/bin/snowsql -c my_connection -q \"create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input11' STORAGE_INTEGRATION = s3_int FILE_FORMAT = dev_convertr.stage.my_file_format\""
