@@ -16,7 +16,7 @@ pipeline {
                 sh 'echo "SNOWSQL_WAREHOUSE=compute_wh" >> snowsql_config'
 
                 // Use sudo with -E option to preserve environment variables
-                sh "snowsql -c my_connection -f create_stage.sql"
+                sh "/root/bin/snowsql -c my_connection -f create_stage.sql"
 
             }
         }
@@ -24,7 +24,7 @@ pipeline {
         stage('Copy data from S3 to Snowflake') {
             steps {
                 // Use sudo with -E option to preserve environment variables
-                sh "snowsql -c my_connection -f copy_data.sql"
+                sh "/root/bin/snowsql -c my_connection -f copy_data.sql"
             }
         }
     }
