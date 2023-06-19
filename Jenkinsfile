@@ -11,7 +11,7 @@ pipeline {
             steps {
                 sh 'echo "SNOWSQL_ACCOUNT=kx23846.ap-southeast-1" > snowsql_config'
                 sh 'echo "SNOWSQL_USER=mark" >> snowsql_config'
-                sh "echo 'SNOWSQL_PASSWORD=${env.snowflake_password}' >> snowsql_config"
+                sh "echo 'SNOWSQL_PASSWORD=${env.SNOWSQL_PASSWORD}' >> snowsql_config"
                 sh 'echo "SNOWSQL_ROLE=accountadmin" >> snowsql_config'
                 sh 'echo "SNOWSQL_WAREHOUSE=compute_wh" >> snowsql_config'
 
