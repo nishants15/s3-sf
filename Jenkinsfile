@@ -15,14 +15,8 @@ pipeline {
                 sh 'echo "SNOWSQL_ROLE=accountadmin" >> snowsql_config'
                 sh 'echo "SNOWSQL_WAREHOUSE=compute_wh" >> snowsql_config'
 
-                // Adjust ownership and permissions
-                sh 'sudo chown -R ec2-user:ec2-user /var/lib/jenkins/workspace/s3-sf_int/.snowsql'
-                sh 'sudo chmod -R 700 /var/lib/jenkins/workspace/s3-sf_int/.snowsql'
-                sh 'sudo chown ec2-user:ec2-user /var/lib/jenkins/workspace/snowsql_rt.log_bootstrap'
-                sh 'sudo chmod +w /var/lib/jenkins/workspace/snowsql_rt.log_bootstrap'
-
                 // Use sudo with -E option to preserve environment variables
-                sh "sudo -u ec2-user -E snowsql -c my_connection -f create_stage.sql"
+                sh "snowsql -c my_connection -f create_stage.sql"
 
             }
         }
@@ -30,7 +24,7 @@ pipeline {
         stage('Copy data from S3 to Snowflake') {
             steps {
                 // Use sudo with -E option to preserve environment variables
-                sh "sudo -u ec2-user -E snowsql -c my_connection -f copy_data.sql"
+                sh "snowsql -c my_connection -f copy_data.sql"
             }
         }
     }
