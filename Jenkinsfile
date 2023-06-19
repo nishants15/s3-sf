@@ -20,7 +20,7 @@ pipeline {
                 sh 'sudo chmod +w /home/snowsql_rt.log_bootstrap'
 
                 // Use sudo with -E option to preserve environment variables
-                sh sh "sudo -u ec2-user -E snowsql -c my_connection -f create_stage.sql"
+                sh "sudo -u ec2-user -E snowsql -c my_connection -f create_stage.sql"
 
             }
         }
