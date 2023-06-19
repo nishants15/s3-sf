@@ -21,7 +21,7 @@ pipeline {
         stage('Connection establishment') {
             steps {
                 // Use sudo with -E option to preserve environment variables
-                sh "sudo -u ec2-user -E snowsql -c my_connection"
+                sh "sudo -u ec2-user snowsql -c my_connection"
             }
         }
 
@@ -29,7 +29,7 @@ pipeline {
             steps {
                 // Use sudo with -E option to preserve environment variables
                 sh """
-                    sudo -u ec2-user -E snowsql -c my_connection -q \\
+                    sudo -u ec2-user snowsql -c my_connection -q \\
                     "create or replace stage dev_convertr.stage.s3_stage \\
                     url='s3://snowflake-input11' \\
                     STORAGE_INTEGRATION = s3_int \\
