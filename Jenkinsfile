@@ -9,7 +9,7 @@ pipeline {
         }
         stage("Authenticate with Snowflake") {
             steps {
-                sh 'echo "SNOWSQL_ACCOUNT=itb89569.ap-southeast-1" > snowsql_config'
+                sh 'echo "SNOWSQL_ACCOUNT=itb89569.us-east-1" > snowsql_config'
                 sh 'echo "SNOWSQL_USER=mark" >> snowsql_config'
                 sh "echo 'SNOWSQL_PASSWORD=${env.SNOWSQL_PASSWORD}' >> snowsql_config"
                 sh 'echo "SNOWSQL_ROLE=accountadmin" >> snowsql_config'
