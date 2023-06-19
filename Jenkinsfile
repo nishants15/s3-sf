@@ -39,16 +39,15 @@ pipeline {
 
         stage('Run SQL Script') {
             steps {
-                sh """
-                    sudo -u ec2-user snowsql -c my_connection -q \\
-                    "COPY INTO dev_convertr.stage.stg_campaign1 \\
+                sh '''
+                    sudo -u ec2-user snowsql -c my_connection -q "
+                    COPY INTO stage.stg_campaign1
                     FROM (
-                      SELECT \$1,\$2,\$3,\$4,\$5,\$6,\$7,\$8,\$9,\$10,\$11,\$12,\$13,\$14,\$15,\$16,\$17,\$18,\$19,\$20,
-                      METADATA\$FILENAME, CURRENT_TIMESTAMP(), 'Not Processed', NULL
-                      FROM @dev_convertr.stage.s3_stage
-                      PATTERN='.*Campaign1.*[.]csv'
+                    SELECT $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,METADATA$FILENAME,current_timestamp(),'Not Processed', NULL
+                    FROM @S3_Stage
+                    PATTERN='.*Campaign1.*[.]csv'
                     )"
-                """
+                    '''
             }
         }
     }
