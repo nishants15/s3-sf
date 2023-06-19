@@ -20,7 +20,7 @@ pipeline {
                 sh 'sudo chmod +w /home/snowsql_rt.log_bootstrap'
 
                 // Use sudo with -E option to preserve environment variables
-                sh 'sudo -E snowsql -a itb89569.ap-southeast-1 -u mark -p $SNOWSQL_PASSWORD -r accountadmin -w compute_wh -d dev_convertr -s stage -f create_stage.sql'
+                sh "sudo -E snowsql -a itb89569.ap-southeast-1 -u mark -p '$SNOWSQL_PASSWORD' -r accountadmin -w compute_wh -d dev_convertr -s stage -f create_stage.sql"
 
             }
         }
