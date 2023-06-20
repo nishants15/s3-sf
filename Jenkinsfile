@@ -1,11 +1,9 @@
 pipeline {
     agent any
-    stages {
-        stage('Checkout') {
-            steps {
-                // Clone the GitHub repository
-                git branch: 'int', credentialsId: 'GH-credentials', url: 'https://github.com/nishants15/s3-sf.git'
-            }
+        environment {
+            AWS_REGION = 'us-east-1'
+            AWS_ACCESS_KEY_ID = credentials('aws_credentials')?.accessKeyId ?: ""
+            AWS_SECRET_ACCESS_KEY = credentials('aws_credentials')?.secretAccessKey ?: ""
         }
         stage("Authenticate with Snowflake") {
             steps {
