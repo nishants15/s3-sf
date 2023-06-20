@@ -5,6 +5,15 @@ pipeline {
             AWS_ACCESS_KEY_ID = credentials('aws_credentials')?.accessKeyId ?: ""
             AWS_SECRET_ACCESS_KEY = credentials('aws_credentials')?.secretAccessKey ?: ""
         }
+
+        stages {
+        stage('Checkout') {
+            steps {
+                // Clone the GitHub repository
+                git branch: 'int', credentialsId: 'GH-credentials', url: 'https://github.com/nishants15/s3-sf.git'
+            }
+        }
+
         stage("Authenticate with Snowflake") {
             steps {
                 sh 'echo "SNOWSQL_ACCOUNT=itb89569.us-east-1" > snowsql_config'
