@@ -6,7 +6,7 @@ pipeline {
             steps {
                 withCredentials([
                     // Add your AWS credentials here
-                    [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS-credentials']
+                    [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_credentials']
                 ]) {
                     // You can perform any necessary setup steps for AWS credentials here
                 }
