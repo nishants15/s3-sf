@@ -1,13 +1,25 @@
 pipeline {
     agent any
-        stages {
+    
+    stages {
+        stage('AWS Credentials Setup') {
+            steps {
+                withCredentials([
+                    // Add your AWS credentials here
+                    [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS-credentials']
+                ]) {
+                    // You can perform any necessary setup steps for AWS credentials here
+                }
+            }
+        }
+        
         stage('Checkout') {
             steps {
                 // Clone the GitHub repository
                 git branch: 'int', credentialsId: 'GH-credentials', url: 'https://github.com/nishants15/s3-sf.git'
             }
         }
-
+        
         stage("Authenticate with Snowflake") {
             steps {
                 sh 'echo "SNOWSQL_ACCOUNT=itb89569.us-east-1" > snowsql_config'
@@ -17,14 +29,14 @@ pipeline {
                 sh 'echo "SNOWSQL_WAREHOUSE=compute_wh" >> snowsql_config'
             }
         }
-
+        
         stage('Connection establishment') {
             steps {
                 // Use sudo with -E option to preserve environment variables
                 sh "sudo -u ec2-user snowsql -c my_connection"
             }
         }
-
+        
         stage('Create Snowflake Stage') {
             steps {
                 // Use sudo with -E option to preserve environment variables
@@ -37,7 +49,7 @@ pipeline {
                 """
             }
         }
-
+        
         stage('Run SQL Script') {
             steps {
                 sh 'sudo -u ec2-user snowsql -c my_connection -f copy_data.sql'
