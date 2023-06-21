@@ -1,5 +1,9 @@
 pipeline {
     agent any
+        environment {
+            def accessKeyId = env.AWS_ACCESS_KEY_ID
+            def secretAccessKey = env.AWS_SECRET_ACCESS_KEY
+        }
         stages {
         stage('Checkout') {
             steps {
