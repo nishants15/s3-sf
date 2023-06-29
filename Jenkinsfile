@@ -1,8 +1,8 @@
 pipeline {
     agent any
     environment {
-        AWS_CREDENTIALS = credentials('aws_credentials')
-        SNOW_CRED = credentials('snow_cred')
+        AWS_Access_Key_ID = credentials('aws_credentials')
+        AWS_Secret_Access_Key = credentials('aws_credentials')
         SNOWFLAKE_ACCOUNT = 'itb89569.us-east-1'
         S3_BUCKET = 'snowflake-input11'
         IAM_ROLE_NAME = 'snow-role'
@@ -15,13 +15,13 @@ pipeline {
         }
         stage('Create Storage Integration') {
             steps {
-                sh 'snowsql -a $SNOWFLAKE_ACCOUNT -u ${SNOW_CRED_USR} -p ${SNOW_CRED_PSW} -q "CREATE STORAGE INTEGRATION s3_int TYPE = EXTERNAL_STAGE STORAGE_PROVIDER = S3 ENABLED = TRUE"'
+                sh 'sudo -u ec2-user snowsql -c my_connection -q "CREATE STORAGE INTEGRATION s3_int TYPE = EXTERNAL_STAGE STORAGE_PROVIDER = S3 ENABLED = TRUE"'
             }
         }
         stage('Extract External ID and IAM User ARN') {
             steps {
                 script {
-                    def output = sh(returnStdout: true, script: 'snowsql -a $SNOWFLAKE_ACCOUNT -u ${SNOW_CRED_USR} -p ${SNOW_CRED_PSW} -q "DESCRIBE STORAGE INTEGRATION s3_int"')
+                    def output = sh(returnStdout: true, script: 'sudo -u ec2-user snowsql -c my_connection -q "DESCRIBE STORAGE INTEGRATION s3_int"')
                     def matchExternalId = output =~ /STORAGE_AWS_EXTERNAL_ID=(\S+)/
                     def matchIamUserArn = output =~ /STORAGE_AWS_IAM_USER_ARN=(\S+)/
                     def externalId = matchExternalId[0][1]
@@ -32,12 +32,12 @@ pipeline {
         }
         stage('Confirm Connection and Create File Format') {
             steps {
-                sh 'snowsql -a $SNOWFLAKE_ACCOUNT -u ${SNOW_CRED_USR} -p ${SNOW_CRED_PSW} -q "CREATE FILE FORMAT my_file_format TYPE = CSV"'
+                sh 'sudo -u ec2-user snowsql -c my_connection -q "CREATE FILE FORMAT my_file_format TYPE = CSV"'
             }
         }
         stage('Create Snowflake Stage') {
             steps {
-                sh 'snowsql -a $SNOWFLAKE_ACCOUNT -u ${SNOW_CRED_USR} -p ${SNOW_CRED_PSW} -q "CREATE OR REPLACE STAGE dev_convertr.stage.s3_stage URL=\'s3://$S3_BUCKET\' STORAGE_INTEGRATION = s3_int FILE_FORMAT = my_file_format"'
+                sh 'sudo -u ec2-user snowsql -c my_connection -q "CREATE OR REPLACE STAGE dev_convertr.stage.s3_stage URL=\'s3://$S3_BUCKET\' STORAGE_INTEGRATION = s3_int FILE_FORMAT = my_file_format"'
             }
         }
     }
