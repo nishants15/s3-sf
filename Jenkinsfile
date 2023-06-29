@@ -11,13 +11,12 @@ pipeline {
                 {
                     "Effect": "Allow",
                     "Principal": {
-                        "Service": "snowflake.amazonaws.com"
+                        "AWS": "STORAGE_AWS_IAM_USER_ARN_VALUE"
                     },
                     "Action": "sts:AssumeRole",
                     "Condition": {
                         "StringEquals": {
-                            "sts:ExternalId": "STORAGE_AWS_EXTERNAL_ID_VALUE",
-                            "sts:aws:userid": "STORAGE_AWS_IAM_USER_ARN_VALUE"
+                            "sts:ExternalId": "STORAGE_AWS_EXTERNAL_ID_VALUE"
                         }
                     }
                 }
