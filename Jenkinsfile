@@ -15,7 +15,7 @@ pipeline {
         }
         stage('Create Storage Integration') {
             steps {
-                sh 'sudo -u ec2-user snowsql -c my_connection -q "CREATE STORAGE INTEGRATION s3_int TYPE = EXTERNAL_STAGE STORAGE_PROVIDER = S3 ENABLED = TRUE"'
+                sh 'sudo -u ec2-user snowsql -c my_connection -q "CREATE OR REPLACE STORAGE INTEGRATION s3_int TYPE = EXTERNAL_STAGE STORAGE_PROVIDER = S3 ENABLED = TRUE"'
             }
         }
         stage('Extract External ID and IAM User ARN') {
@@ -32,12 +32,12 @@ pipeline {
         }
         stage('Confirm Connection and Create File Format') {
             steps {
-                sh 'sudo -u ec2-user snowsql -c my_connection -q "CREATE FILE FORMAT my_file_format TYPE = CSV"'
+                sh 'sudo -u ec2-user snowsql -c my_connection -q "CREATE OR REPLACE FILE FORMAT my_file_format TYPE = CSV"'
             }
         }
         stage('Create Snowflake Stage') {
             steps {
-                sh 'sudo -u ec2-user snowsql -c my_connection -q "CREATE OR REPLACE STAGE dev_convertr.stage.s3_stage URL=\'s3://$S3_BUCKET\' STORAGE_INTEGRATION = s3_int FILE_FORMAT = my_file_format"'
+                sh 'sudo -u ec2-user snowsql -c my_connection -q "CREATE OR REPLACE STAGE dev_convertr.stage.s3_stag URL=\'s3://$S3_BUCKET\' STORAGE_INTEGRATION = s3_int FILE_FORMAT = my_file_format"'
             }
         }
     }
