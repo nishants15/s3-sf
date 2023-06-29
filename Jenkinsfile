@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        AWS Credentials = credentials('aws_credentials')
+        AWS_Credentials = credentials('aws_credentials')
         SNOWFLAKE_ACCOUNT = 'itb89569.us-east-1'
         S3_BUCKET = 'snowflake-input11'
         IAM_ROLE_NAME = 'snow-role'
