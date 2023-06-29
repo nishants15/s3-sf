@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        AWS_Credentials = credentials('aws_credentials')
+        SNOW_CRED = credentials('snow_cred')
         SNOWFLAKE_ACCOUNT = 'itb89569.us-east-1'
         S3_BUCKET = 'snowflake-input11'
         IAM_ROLE_NAME = 'snow-role'
@@ -9,7 +9,9 @@ pipeline {
     stages {
         stage('Create AWS IAM Role') {
             steps {
-                sh "aws iam create-role --role-name $IAM_ROLE_NAME --assume-role-policy-document file://trust-policy.json --aws-access-key-id ${AWS_CREDENTIALS} --aws-secret-access-key ${AWS_CREDENTIALS}"
+                withAWS(region: 'us-east-1', credentials: 'aws_credentials') {
+                    sh "aws iam create-role --role-name $IAM_ROLE_NAME --assume-role-policy-document file://trust-policy.json"
+                }
             }
         }
         stage('Create Storage Integration') {
