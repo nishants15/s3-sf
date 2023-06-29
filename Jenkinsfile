@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Create AWS IAM Role') {
             steps {
-                sh "aws iam create-role --role-name $IAM_ROLE_NAME --assume-role-policy-document file://trust-policy.json --aws-access-key-id ${AWS_CREDENTIALS_USR} --aws-secret-access-key ${AWS_CREDENTIALS_PSW}"
+                sh "aws iam create-role --role-name $IAM_ROLE_NAME --assume-role-policy-document file://trust-policy.json --aws-access-key-id ${AWS_CREDENTIALS} --aws-secret-access-key ${AWS_CREDENTIALS}"
             }
         }
         stage('Create Storage Integration') {
