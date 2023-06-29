@@ -1,7 +1,8 @@
 pipeline {
     agent any
     environment {
-        AWS_CREDENTIALS = credentials('aws_credentials')
+        SNOW_CRED = credentials('snow_cred')
+        SNOWFLAKE_ACCOUNT = 'itb89569.us-east-1'
         S3_BUCKET = 'snowflake-input11'
         IAM_ROLE_NAME = 'snow-role'
         TRUST_POLICY = '''{
@@ -30,8 +31,8 @@ pipeline {
                     def trustPolicy = TRUST_POLICY
                         .replace('STORAGE_AWS_EXTERNAL_ID_VALUE', '')
                         .replace('STORAGE_AWS_IAM_USER_ARN_VALUE', '')
-                    withCredentials([string(credentialsId: 'aws_credentials', variable: 'AWS_CREDENTIALS')]) {
-                        sh "aws iam create-role --role-name $IAM_ROLE_NAME --assume-role-policy-document '$trustPolicy' --access-key-id $AWS_CREDENTIALS_USR --secret-access-key $AWS_CREDENTIALS_PSW"
+                    withAWS(credentials: 'aws_credentials') {
+                        sh "aws iam create-role --role-name $IAM_ROLE_NAME --assume-role-policy-document '$trustPolicy'"
                     }
                 }
             }
