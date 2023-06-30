@@ -28,7 +28,7 @@ pipeline {
                 '''
             }
         }
-
+    }
         stage('Create Storage Integration with S3 URL in Snowflake') {
             steps {
                 sh '''
