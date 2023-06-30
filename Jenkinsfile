@@ -22,11 +22,9 @@ pipeline {
     stages {
         stage('Create AWS IAM Role') {
             steps {
-                withAWS(credentials: "${awsCredentialsId}") {
-                    sh '''
-                    aws iam create-role --role-name snowflake-role --assume-role-policy-document file://${iamPolicy}
-                    '''
-                }
+                sh '''
+                aws iam create-role --role-name snowflake-role --assume-role-policy-document file:///home/ec2-user/iam-policy.json
+                '''
             }
         }
 
@@ -48,11 +46,9 @@ pipeline {
 
         stage('Update IAM Role Trust Relationship with STORAGE_AWS_EXTERNAL_ID and STORAGE_AWS_IAM_USER_ARN') {
             steps {
-                withAWS(credentials: "${awsCredentialsId}") {
-                    sh '''
-                    aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://${iamPolicy}
-                    '''
-                }
+                sh '''
+                aws iam update-assume-role-policy --role-name snowflake-role --assume-role-policy-document file:///home/ec2-user/iam-policy.json
+                '''
             }
         }
 
