@@ -9,7 +9,7 @@ pipeline {
                     def externalId = '0000000'
                     def accountId = '988231236474'
                     
-                    withAWS(credentials: 'aws_Credentials') {
+                    withAWS(credentials: 'aws_credentials') {
                         def createRoleCommand = "aws iam create-role --role-name ${roleName} --assume-role-policy-document '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"${accountId}\"},\"Action\":\"sts:AssumeRole\",\"Condition\":{\"StringEquals\":{\"sts:ExternalId\":\"${externalId}\"}}}]}')"
                         sh createRoleCommand
                         
