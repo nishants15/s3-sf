@@ -67,8 +67,7 @@ pipeline {
         stage('Create CSV File Format') {
             steps {
                 sh '''
-                sudo -u ec2-user snowsql -c my_connection
-                create file format csv with delimiter=','
+                sudo -u ec2-user snowsql -c my_connection -q "create file format file_format type='CSV'"
                 '''
             }
         }
@@ -76,8 +75,9 @@ pipeline {
         stage('Create Snowflake Stage') {
             steps {
                 sh '''
-                sudo -u ec2-user snowsql -c my_connection
-                create stage snowflake-input12 with storage_integration='s3_integration' and s3_uri="s3://snowflake-input12" and file_format='csv'
+                sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s32_stage url='s3://snowflake-input12'
+                STORAGE_INTEGRATION = s3_integration
+                FILE_FORMAT = dev_convertr.stage.file_format;"
                 '''
             }
         }
