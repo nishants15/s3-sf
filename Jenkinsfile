@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('AWS Configuration') {
             steps {
-                withAWS(credentials: 'awsCredentialsId') {
+                withAWS(credentials: 'aws_credentials') {
                     sh 'aws iam create-role --role-name snowflake-role --assume-role-policy-document \'{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"988231236474"},"Action":"sts:AssumeRole","Condition":{"StringEquals":{"sts:ExternalId":"0000000"}}}]}\'' 
                     sh 'aws iam put-role-policy --role-name snowflake-role --policy-name s3-access-policy --policy-document \'{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:ListBucket"],"Resource":"arn:aws:s3:::snowflake-input12"},{"Effect":"Allow","Action":["s3:GetObject","s3:PutObject"],"Resource":"arn:aws:s3:::snowflake-input12/*"}]}\''
                     sh 'aws iam get-role --role-name snowflake-role --query "Role.Arn"'
