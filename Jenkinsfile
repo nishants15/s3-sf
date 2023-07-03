@@ -39,7 +39,7 @@ trust_policy_document = trust_policy_document.strip()
             steps {
                 sh '''
 sudo -u ec2-user snowsql -c my_connection
-create or replace storage integration s3_integration with aws_role_arn="arn:aws:iam::988231236474:role/snowflake-role" and s3_uri="s3://snowflake-input12"
+create or replace storage integration s3_integration with aws_role_arn="arn:aws:iam::988231236474:role/snowflake-role" and s3_url="s3://snowflake-input12"
 '''
             }
         }
@@ -76,7 +76,7 @@ create file format csv with delimiter=','
             steps {
                 sh '''
 sudo -u ec2-user snowsql -c my_connection
-create stage snowflake-input12 with storage_integration='s3_integration' and s3_uri="s3://snowflake-input12" and file_format='csv'
+create stage snowflake-input12 with storage_integration='s3_integration' and s3_url="s3://snowflake-input12" and file_format='csv'
 '''
             }
         }
