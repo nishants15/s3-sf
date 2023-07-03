@@ -4,7 +4,7 @@ pipeline {
         stage('Create AWS Role') {
     steps {
         script {
-            def trust_policy_document = '''
+            def trust_policy_document = """
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -26,7 +26,7 @@ pipeline {
     }
   ]
 }
-'''
+"""
             withAWS(credentials: 'aws_credentials') {
                 sh """
 echo '${trust_policy_document}' > trust-policy.json
