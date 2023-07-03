@@ -36,13 +36,17 @@ trust_policy_document = trust_policy_document.strip()
     }
 }
         stage('Create Snowflake Storage Integration') {
-            steps {
-                sh '''
-sudo -u ec2-user snowsql -c my_connection
-create or replace storage integration s3_integration with aws_role_arn="arn:aws:iam::988231236474:role/snowflake-role" and s3_url="s3://snowflake-input12"
-'''
-            }
-        }
+    steps {
+        sh '''
+        snowsql -c my_connection -q "create or replace storage integration s3_integration
+          TYPE = EXTERNAL_STAGE
+          STORAGE_PROVIDER = S3
+          ENABLED = TRUE 
+          STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::988231236474:role/snowflake-role'
+          STORAGE_ALLOWED_LOCATIONS = ('s3://snowflake-input12')"
+        '''
+    }
+}
         
         stage('Fetch Storage AWS IAM User ARN and External ID') {
             steps {
@@ -64,20 +68,26 @@ aws iam update-assume-role-policy --role-name snowflake-role --policy-document f
         }
         
         stage('Create CSV File Format') {
-            steps {
-                sh '''
-sudo -u ec2-user snowsql -c my_connection
-create file format csv with delimiter=','
-'''
-            }
-        }
+    steps {
+        sh '''
+        snowsql -c my_connection -q "create or replace file format my_file_format
+          type = csv field_delimiter = ',' skip_header = 1
+          field_optionally_enclosed_by = '\"'
+          null_if = ('NULL', 'null')
+          empty_field_as_null = true
+          error_on_column_count_mismatch = false;"
+        '''
+    }
+}
+
         
-        stage('Create Snowflake Stage') {
+        stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
             steps {
                 sh '''
-sudo -u ec2-user snowsql -c my_connection
-create stage snowflake-input12 with storage_integration='s3_integration' and s3_url="s3://snowflake-input12" and file_format='csv'
-'''
+                sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
+                STORAGE_INTEGRATION = s3_integration
+                FILE_FORMAT = dev_convertr.stage.my_file_format;"
+                '''
             }
         }
     }
