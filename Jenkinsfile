@@ -1,11 +1,6 @@
 pipeline {
     agent any
     
-   pipeline {
-    agent {
-        label 'aws'
-    }
-
     stages {
         stage('Create AWS Role') {
             steps {
@@ -72,7 +67,6 @@ pipeline {
                 sh '''
                 sudo -u ec2-user snowsql -c my_connection -q "create stage snowflake-input12 with storage_integration='s3_integration' and s3_url='s3://snowflake-input12' and file_format='csv'"
                 '''
-                }
             }
         }
     }
