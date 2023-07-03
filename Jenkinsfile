@@ -31,13 +31,24 @@ pipeline {
         stage('Create AWS IAM Role') {
             steps {
                 withAWS(credentials: awsCredentialsId) {
-                    sh '''
-                    aws iam create-role --role-name snowflake-role --assume-role-policy-document file:///home/ec2-user/iam-policy.json
-                    '''
+                    script {
+                        def roleExists = sh(
+                            script: 'aws iam get-role --role-name snowflake-role',
+                            returnStatus: true
+                        ) == 0
+
+                        if (!roleExists) {
+                            sh '''
+                            aws iam create-role --role-name snowflake-role --assume-role-policy-document file:///home/ec2-user/iam-policy.json
+                            '''
+                        } else {
+                            echo "Role 'snowflake-role' already exists."
+                        }
+                    }
                 }
             }
         }
-
+        
         stage('Create Storage Integration with S3 URL in Snowflake') {
             steps {
                 sh '''
