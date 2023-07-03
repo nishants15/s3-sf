@@ -10,17 +10,34 @@ def iamPolicy = """
       "Principal": {
         "AWS": "*"
       },
-      "Action": "sts:AssumeRole"
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "StringEquals": {
+          "sts:ExternalId": "STORAGE_AWS_EXTERNAL_ID"
+        },
+        "StringLike": {
+          "sts:ExternalId": "arn:aws:iam::*:user/STORAGE_AWS_IAM_USER_ARN"
+        }
+      }
     }
   ]
 }
 """
 
-        withAWS(credentials: awsCredentialsId) {
-        sh '''
-        aws iam create-role --role-name snowflake-role --assume-role-policy-document file:///home/ec2-user/iam-policy.json
-        '''
+pipeline {
+    agent any
+
+    stages {
+        stage('Create AWS IAM Role') {
+            steps {
+                withAWS(credentials: awsCredentialsId) {
+                    sh '''
+                    aws iam create-role --role-name snowflake-role --assume-role-policy-document file:///home/ec2-user/iam-policy.json
+                    '''
+                }
+            }
         }
+
         stage('Create Storage Integration with S3 URL in Snowflake') {
             steps {
                 sh '''
@@ -31,21 +48,35 @@ def iamPolicy = """
 
         stage('Extract STORAGE_AWS_EXTERNAL_ID and STORAGE_AWS_IAM_USER_ARN from Snowflake') {
             steps {
-                sh '''
-                sudo -u ec2-user snowsql -c my_connection -q "select STORAGE_AWS_EXTERNAL_ID, STORAGE_AWS_IAM_USER_ARN from storage_integrations where name='s3_int'"
-                '''
+                script {
+                    def storageIntegrationOutput = sh(
+                        script: "sudo -u ec2-user snowsql -c my_connection -q \"select STORAGE_AWS_EXTERNAL_ID, STORAGE_AWS_IAM_USER_ARN from storage_integrations where name='s3_int'\" | tail -n 3",
+                        returnStdout: true
+                    ).trim()
+                    def matches = storageIntegrationOutput =~ /(?m)^(.+)$/
+                    def STORAGE_AWS_EXTERNAL_ID = matches[0][0].trim()
+                    def STORAGE_AWS_IAM_USER_ARN = matches[1][0].trim()
+
+                    // Update IAM policy with extracted values
+                    def updatedIAMPolicy = iamPolicy.replace("STORAGE_AWS_EXTERNAL_ID", STORAGE_AWS_EXTERNAL_ID)
+                                                     .replace("STORAGE_AWS_IAM_USER_ARN", STORAGE_AWS_IAM_USER_ARN)
+
+                    // Save the updated IAM policy to a file
+                    writeFile file: "/home/ec2-user/updated-iam-policy.json", text: updatedIAMPolicy
+                }
             }
         }
 
         stage('Update IAM Role Trust Relationship with STORAGE_AWS_EXTERNAL_ID and STORAGE_AWS_IAM_USER_ARN') {
             steps {
                 withAWS(credentials: awsCredentialsId) {
-                sh '''
-                aws iam update-assume-role-policy --role-name snowflake-role --assume-role-policy-document file:///home/ec2-user/iam-policy.json
-                '''
+                    sh '''
+                    aws iam update-assume-role-policy --role-name snowflake-role --policy-document file:///home/ec2-user/updated-iam-policy.json
+                    '''
+                }
             }
         }
-    }
+
         stage('Confirm Connection Between AWS Role and Snowflake') {
             steps {
                 sh '''
@@ -63,5 +94,5 @@ def iamPolicy = """
                 '''
             }
         }
-    
-
+    }
+}
