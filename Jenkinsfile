@@ -61,7 +61,7 @@ pipeline {
             steps {
                 script {
                     def output = sh (
-                        script: "sudo -u ec2-user snowsql -c my_connection -q \"select STORAGE_AWS_EXTERNAL_ID, STORAGE_AWS_IAM_USER_ARN from storage_integrations where name='s3_int'\" --o json",
+                        sudo -u ec2-user snowsql -c my_connection -q "select STORAGE_AWS_EXTERNAL_ID, STORAGE_AWS_IAM_USER_ARN from storage_integrations where name='s3_int'"
                         returnStdout: true
                     )
                     def json = readJSON text: output.trim()
