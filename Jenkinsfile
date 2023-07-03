@@ -48,11 +48,15 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Create Storage Integration with S3 URL in Snowflake') {
             steps {
                 sh '''
-                sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integration s3_int type='S3' url='s3://snowflake-input12'"
+                sudo -u ec2-user snowsql -c my_connection -q create or replace storage integration s3_int
+                TYPE = EXTERNAL_STAGE
+                STORAGE_PROVIDER = S3
+                ENABLED = TRUE 
+                STORAGE_ALLOWED_LOCATIONS = ('s3://snowflake-input11')
                 '''
             }
         }
