@@ -5,31 +5,31 @@ pipeline {
     steps {
         script {
             def trust_policy_document = '''
-            {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Principal": {
-                            "AWS": {
-                                "Account": "988231236474"
-                            }
-                        },
-                        "Action": "sts:AssumeRole",
-                        "Condition": {
-                            "StringEquals": {
-                                "sts:ExternalId": "0000000"
-                            }
-                        }
-                    }
-                ]
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": {
+                    "Account": "988231236474"
+                }
+            },
+            "Action": "sts:AssumeRole",
+            "Condition": {
+                "StringEquals": {
+                    "sts:ExternalId": "0000000"
+                }
             }
-            '''
+        }
+    ]
+}
+'''
             withAWS(credentials: 'aws_credentials') {
                 sh """
-                echo '${trust_policy_document}' > trust-policy.json
-                aws iam create-role --role-name snowflake-role --assume-role-policy-document file://trust-policy.json --permissions-boundary arn:aws:iam::988231236474:policy/ReadOnlyAccess
-                """
+echo '${trust_policy_document}' > trust-policy.json
+aws iam create-role --role-name snowflake-role --assume-role-policy-document file://trust-policy.json --permissions-boundary arn:aws:iam::988231236474:policy/ReadOnlyAccess
+"""
             }
         }
     }
