@@ -52,7 +52,7 @@ trust_policy_document = trust_policy_document.strip()
             steps {
                 sh '''
 sudo -u ec2-user snowsql -c my_connection
-desc integration s3_integration
+desc integration s3_integration;
 '''
             }
         }
