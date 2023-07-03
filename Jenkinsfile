@@ -1,7 +1,5 @@
 pipeline {
-    agent {
-        label 'aws'
-    }
+    agent any
     
     stages {
         stage('Create AWS Role') {
