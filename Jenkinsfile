@@ -29,7 +29,7 @@ trust_policy_document = trust_policy_document.strip()
             withAWS(credentials: 'aws_credentials') {
                 writeFile file: 'trust-policy.json', text: trust_policy_document
                 sh '''
-                aws iam create-role --role-name snowflake-role --assume-role-policy-document file://trust-policy.json --permissions-boundary arn:aws:iam::988231236474:policy/ReadOnlyAccess
+                aws iam create-role --role-name snowflake-role --assume-role-policy-document file://trust-policy.json 
                 '''
             }
         }
