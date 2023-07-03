@@ -26,9 +26,10 @@ pipeline {
             }
             '''
             withAWS(credentials: 'aws_credentials') {
-                sh '''
-                aws iam create-role --role-name snowflake-role --assume-role-policy-document "$trust_policy_document" --permissions-boundary arn:aws:iam::988231236474:policy/ReadOnlyAccess
-                '''
+                sh """
+                echo '${trust_policy_document}' > trust-policy.json
+                aws iam create-role --role-name snowflake-role --assume-role-policy-document file://trust-policy.json --permissions-boundary arn:aws:iam::988231236474:policy/ReadOnlyAccess
+                """
             }
         }
     }
