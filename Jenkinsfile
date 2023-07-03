@@ -51,8 +51,7 @@ trust_policy_document = trust_policy_document.strip()
         stage('Fetch Storage AWS IAM User ARN and External ID') {
             steps {
                 sh '''
-sudo -u ec2-user snowsql -c my_connection
-desc integration s3_integration;
+sudo -u ec2-user snowsql -c my_connection -q desc integration s3_integration
 '''
             }
         }
