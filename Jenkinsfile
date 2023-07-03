@@ -4,10 +4,26 @@ pipeline {
     stages {
         stage('AWS Configuration') {
             steps {
-                withAWS(credentials: 'aws_credentials') {
-                    sh 'aws iam create-role --role-name snowflake-role --assume-role-policy-document \'{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"988231236474"},"Action":"sts:AssumeRole","Condition":{"StringEquals":{"sts:ExternalId":"0000000"}}}]}\'' 
-                    sh 'aws iam put-role-policy --role-name snowflake-role --policy-name s3-access-policy --policy-document \'{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:ListBucket"],"Resource":"arn:aws:s3:::snowflake-input12"},{"Effect":"Allow","Action":["s3:GetObject","s3:PutObject"],"Resource":"arn:aws:s3:::snowflake-input12/*"}]}\''
-                    sh 'aws iam get-role --role-name snowflake-role --query "Role.Arn"'
+                script {
+                    def roleName = 'snowflake-role'
+                    def externalId = '0000000'
+                    def accountId = '988231236474'
+                    
+                    withAWS(credentials: 'aws_Credentials') {
+                        def createRoleCommand = "aws iam create-role --role-name ${roleName} --assume-role-policy-document '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"${accountId}\"},\"Action\":\"sts:AssumeRole\",\"Condition\":{\"StringEquals\":{\"sts:ExternalId\":\"${externalId}\"}}}]}')"
+                        sh createRoleCommand
+                        
+                        def putRolePolicyCommand = "aws iam put-role-policy --role-name ${roleName} --policy-name s3-access-policy --policy-document '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Action\":[\"s3:ListBucket\"],\"Resource\":\"arn:aws:s3:::snowflake-input12\"},{\"Effect\":\"Allow\",\"Action\":[\"s3:GetObject\",\"s3:PutObject\"],\"Resource\":\"arn:aws:s3:::snowflake-input12/*\"}]}'"
+                        sh putRolePolicyCommand
+                        
+                        def getRoleCommand = "aws iam get-role --role-name ${roleName} --query 'Role.Arn' --output text"
+                        def roleArn = sh(script: getRoleCommand, returnStdout: true).trim()
+                        echo "Role ARN: ${roleArn}"
+                        
+                        def updateAssumeRolePolicyCommand = "aws iam update-assume-role-policy --role-name ${roleName} --policy-document '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"<snowflake-iam-user-arn>\"},\"Action\":\"sts:AssumeRole\",\"Condition\":{\"StringEquals\":{\"sts:ExternalId\":\"<snowflake-aws-external-id>\"}}}]}'"
+                        updateAssumeRolePolicyCommand = updateAssumeRolePolicyCommand.replace('<snowflake-iam-user-arn>', '<replace-with-snowflake-iam-user-arn>').replace('<snowflake-aws-external-id>', '<replace-with-snowflake-aws-external-id>')
+                        sh updateAssumeRolePolicyCommand
+                    }
                 }
             }
         }
