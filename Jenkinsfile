@@ -52,25 +52,18 @@ pipeline {
         stage('Create Storage Integration with S3 URL in Snowflake') {
             steps {
                 sh '''
-                sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integration s3_int
-                TYPE = EXTERNAL_STAGE
-                STORAGE_PROVIDER = S3
-                ENABLED = TRUE 
-                STORAGE_ALLOWED_LOCATIONS = ('s3://snowflake-input11')"
+                sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integration s3_int type='S3' url='s3://snowflake-input12'"
                 '''
             }
         }
 
         stage('Extract STORAGE_AWS_EXTERNAL_ID and STORAGE_AWS_IAM_USER_ARN from Snowflake') {
             steps {
-                script {
-                    def storageIntegrationOutput = sh(
-                        script: "sudo -u ec2-user snowsql -c my_connection -q \"select STORAGE_AWS_EXTERNAL_ID, STORAGE_AWS_IAM_USER_ARN from storage_integrations where name='s3_int'\" | tail -n 3",
-                        returnStdout: true
-                    ).trim()
-                    def matches = storageIntegrationOutput =~ /(?m)^(.+)$/
-                    def STORAGE_AWS_EXTERNAL_ID = matches[0][0].trim()
-                    def STORAGE_AWS_IAM_USER_ARN = matches[1][0].trim()
+                sh '''
+                sudo -u ec2-user snowsql -c my_connection -q "select STORAGE_AWS_EXTERNAL_ID, STORAGE_AWS_IAM_USER_ARN from storage_integrations where name='s3_int'"
+                '''
+            }
+        }
 
                     // Update IAM policy with extracted values
                     def updatedIAMPolicy = iamPolicy.replace("STORAGE_AWS_EXTERNAL_ID", STORAGE_AWS_EXTERNAL_ID)
