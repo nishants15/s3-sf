@@ -1,12 +1,33 @@
 pipeline {
     agent any
     
+   pipeline {
+    agent {
+        label 'aws'
+    }
+
     stages {
         stage('Create AWS Role') {
             steps {
                 withAWS(credentials: awsCredentialsId) {
                     sh '''
-                    aws iam create-role --role-name snowflake-role --account-id 988231236474 --external-id 0000000 --permissions-boundary arn:aws:iam::988231236474:policy/ReadOnlyAccess
+                    aws iam create-role --role-name snowflake-role --assume-role-policy-document '{
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Principal": {
+                                    "AWS": "arn:aws:iam::988231236474:root"
+                                },
+                                "Action": "sts:AssumeRole",
+                                "Condition": {
+                                    "StringEquals": {
+                                        "sts:ExternalId": "0000000"
+                                    }
+                                }
+                            }
+                        ]
+                    }' --account-id 988231236474 --permissions-boundary arn:aws:iam::988231236474:policy/ReadOnlyAccess
                     '''
                 }
             }
