@@ -10,15 +10,13 @@ pipeline {
     "Statement": [
         {
             "Effect": "Allow",
-            "Principal": {
-                "AWS": {
-                    "Account": "988231236474"
-                }
-            },
             "Action": "sts:AssumeRole",
+            "Principal": {
+                "AWS": "988231236474"
+            },
             "Condition": {
                 "StringEquals": {
-                    "sts:ExternalId": "0000000"
+                    "sts:ExternalId": "000000"
                 }
             }
         }
