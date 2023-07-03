@@ -27,7 +27,7 @@ pipeline {
     ]
 }
 '''
-                    withAWS(credentials: 'awsCredentialsId') {
+                    withAWS(credentials: 'aws_credentials') {
                         sh '''
 aws iam create-role --role-name snowflake-role --account-id 988231236474 --external-id 0000000 --permissions-boundary arn:aws:iam::988231236474:policy/ReadOnlyAccess --assume-role-policy-document file://trust-policy.json
 '''
@@ -56,7 +56,7 @@ desc s3_integration
         
         stage('Update AWS Role Trust Relationship') {
             steps {
-                withAWS(credentials: 'awsCredentialsId') {
+                withAWS(credentials: 'aws_credentials') {
                     sh '''
 aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json
 '''
