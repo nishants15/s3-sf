@@ -62,8 +62,6 @@ pipeline {
                 sh '''
                 sudo -u ec2-user snowsql -c my_connection -q "select STORAGE_AWS_EXTERNAL_ID, STORAGE_AWS_IAM_USER_ARN from storage_integrations where name='s3_int'"
                 '''
-            }
-        }
 
                     // Update IAM policy with extracted values
                     def updatedIAMPolicy = iamPolicy.replace("STORAGE_AWS_EXTERNAL_ID", STORAGE_AWS_EXTERNAL_ID)
@@ -71,6 +69,8 @@ pipeline {
 
                     // Save the updated IAM policy to a file
                     writeFile file: "/home/ec2-user/updated-iam-policy.json", text: updatedIAMPolicy
+            }
+        }    
 
         stage('Update IAM Role Trust Relationship with STORAGE_AWS_EXTERNAL_ID and STORAGE_AWS_IAM_USER_ARN') {
             steps {
