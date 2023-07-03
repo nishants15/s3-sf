@@ -62,8 +62,9 @@ pipeline {
                 sh '''
                 sudo -u ec2-user snowsql -c my_connection -q "select STORAGE_AWS_EXTERNAL_ID, STORAGE_AWS_IAM_USER_ARN from storage_integrations where name='s3_int'"
                 '''
-
-                    // Update IAM policy with extracted values
+            }
+            steps {
+                       // Update IAM policy with extracted values
                     def updatedIAMPolicy = iamPolicy.replace("STORAGE_AWS_EXTERNAL_ID", STORAGE_AWS_EXTERNAL_ID)
                                                      .replace("STORAGE_AWS_IAM_USER_ARN", STORAGE_AWS_IAM_USER_ARN)
 
