@@ -38,7 +38,7 @@ trust_policy_document = trust_policy_document.strip()
         stage('Create Snowflake Storage Integration') {
     steps {
         sh '''
-        snowsql -c my_connection -q "create or replace storage integration s3_integration
+        sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integration s3_integration
           TYPE = EXTERNAL_STAGE
           STORAGE_PROVIDER = S3
           ENABLED = TRUE 
@@ -70,7 +70,7 @@ aws iam update-assume-role-policy --role-name snowflake-role --policy-document f
         stage('Create CSV File Format') {
     steps {
         sh '''
-        snowsql -c my_connection -q "create or replace file format my_file_format
+        sudo -u ec2-user snowsql -c my_connection -q "create or replace file format my_file_format
           type = csv field_delimiter = ',' skip_header = 1
           field_optionally_enclosed_by = '\"'
           null_if = ('NULL', 'null')
