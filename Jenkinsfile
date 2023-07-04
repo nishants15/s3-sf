@@ -60,6 +60,15 @@ pipeline {
 
                     env.AWS_ROLE_ARN = awsRoleArn
                     env.EXTERNAL_ID = externalId
+
+                    // Log the retrieved values
+                    echo "AWS Role ARN: ${awsRoleArn}"
+                    echo "External ID: ${externalId}"
+
+                    // Validate if values were retrieved successfully
+                    if (awsRoleArn == '' || externalId == '') {
+                        error "Failed to retrieve AWS Role ARN and External ID"
+                    }
                 }
             }
         }
