@@ -51,7 +51,7 @@ sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integrat
     steps {
         script {
             def result = sh (
-                script: "sudo -u ec2-user snowsql -c my_connection -q 'desc integration s3_integration'",
+                script: "sudo -u ec2-user snowsql -c my_connection -c snowsql.config -q 'DESC INTEGRATION s3_integration'",
                 returnStdout: true
             ).trim()
 
@@ -65,6 +65,7 @@ sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integrat
             }
         }
     }
+
 
 
         stage('Update AWS Role Trust Relationship') {
