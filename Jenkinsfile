@@ -37,36 +37,32 @@ pipeline {
         stage('Create Snowflake Storage Integration') {
             steps {
                 sh '''
-sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integration s3_integration
-    TYPE = EXTERNAL_STAGE
-    STORAGE_PROVIDER = S3
-    ENABLED = TRUE 
-    STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::988231236474:role/snowflake-role'
-    STORAGE_ALLOWED_LOCATIONS = ('s3://snowflake-input12')"
-'''
+                sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integration s3_integration
+                    TYPE = EXTERNAL_STAGE
+                    STORAGE_PROVIDER = S3
+                    ENABLED = TRUE 
+                    STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::988231236474:role/snowflake-role'
+                    STORAGE_ALLOWED_LOCATIONS = ('s3://snowflake-input12')"
+                '''
             }
         }
 
-        stage('Fetch Storage AWS IAM User ARN and External ID') {
-    steps {
-        script {
-            def result = sh (
-                script: "sudo -u ec2-user snowsql -c my_connection -c snowsql.config -q 'DESC INTEGRATION s3_integration'",
-                returnStdout: true
-            ).trim()
+       stage('Fetch Storage AWS IAM User ARN and External ID') {
+            steps {
+                script {
+                    def integrationDetails = sh(
+                        returnStdout: true,
+                        script: "sudo -u ec2-user snowsql -c my_connection -q \"DESC INTEGRATION s3_integration\" | grep 'STORAGE_AWS_ROLE_ARN\\|STORAGE_AWS_EXTERNAL_ID '"
+                    ).trim()
 
-            // Extract the AWS IAM User ARN and External ID from the command output
-            def awsRoleArn = result =~ /STORAGE_AWS_ROLE_ARN\s*=\s*'([^']+)'/
-            def awsExternalId = result =~ /STORAGE_EXTERNAL_ID\s*=\s*'([^']+)'/
+                    def awsRoleArn = integrationDetails =~ /STORAGE_AWS_ROLE_ARN\s+\|\s+(.*)$/ ? (~/$1/)[0] : ''
+                    def externalId = integrationDetails =~ /STORAGE_AWS_EXTERNAL_ID\s+\|\s+(.*)$/ ? (~/$1/)[0] : ''
 
-            // Print the extracted values
-            echo "AWS IAM User ARN: ${awsRoleArn[0][1]}"
-            echo "AWS External ID: ${awsExternalId[0][1]}"
+                    env.AWS_ROLE_ARN = awsRoleArn
+                    env.EXTERNAL_ID = externalId
+                }
             }
         }
-    }
-
-
 
         stage('Update AWS Role Trust Relationship') {
             steps {
