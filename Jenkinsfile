@@ -72,11 +72,34 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Update AWS Role Trust Relationship') {
             steps {
-                withAWS(credentials: 'aws_credentials') {
-                    sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json'
+                script {
+                    def trustPolicyDocument = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "${env.AWS_ROLE_ARN}"
+            },
+            "Action": "sts:AssumeRole",
+            "Condition": {
+                "StringEquals": {
+                    "sts:ExternalId": "${env.EXTERNAL_ID}"
+                }
+            }
+        }
+    ]
+}
+"""
+
+                    withAWS(credentials: 'aws_credentials') {
+                        writeFile file: 'trust-policy.json', text: trustPolicyDocument
+                        sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json'
+                    }
                 }
             }
         }
