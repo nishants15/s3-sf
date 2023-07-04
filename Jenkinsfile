@@ -74,7 +74,7 @@ aws iam update-assume-role-policy --role-name snowflake-role --policy-document f
           field_optionally_enclosed_by = '\"'
           null_if = ('NULL', 'null')
           empty_field_as_null = true
-          error_on_column_count_mismatch = false;"
+          error_on_column_count_mismatch = false"
         '''
     }
 }
@@ -85,7 +85,7 @@ aws iam update-assume-role-policy --role-name snowflake-role --policy-document f
                 sh '''
                 sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
                 STORAGE_INTEGRATION = s3_integration
-                FILE_FORMAT = dev_convertr.stage.my_file_format;"
+                FILE_FORMAT = dev_convertr.stage.my_file_format"
                 '''
             }
         }
