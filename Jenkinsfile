@@ -65,19 +65,6 @@ aws iam update-assume-role-policy --role-name snowflake-role --policy-document f
                 }
             }
         }
-        
-        stage('Create CSV File Format') {
-    steps {
-        sh '''
-        sudo -u ec2-user snowsql -c my_connection -q "create or replace file format my_file_format
-          type = csv field_delimiter = ',' skip_header = 1
-          field_optionally_enclosed_by = '\"'
-          null_if = ('NULL', 'null')
-          empty_field_as_null = true
-          error_on_column_count_mismatch = false"
-        '''
-    }
-}
 
         
         stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
