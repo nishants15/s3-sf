@@ -51,20 +51,21 @@ sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integrat
     steps {
         script {
             def result = sh (
-                script: "sudo -u ec2-user snowsql -c my_connection -q 'select aws_role_arn, aws_external_id from information_schema.integrations where name = \\'s3_integration\\''",
+                script: "sudo -u ec2-user snowsql -c my_connection -q 'show storage integration s3_integration'",
                 returnStdout: true
             ).trim()
 
             // Extract the AWS IAM User ARN and External ID from the command output
-            def awsRoleArn = result =~ /AWS_ROLE_ARN\s+\|\s+(.*)$/
-            def awsExternalId = result =~ /AWS_EXTERNAL_ID\s+\|\s+(.*)$/
+            def awsRoleArn = result =~ /STORAGE_AWS_ROLE_ARN\s*=\s*'([^']+)'/
+            def awsExternalId = result =~ /STORAGE_EXTERNAL_ID\s*=\s*'([^']+)'/
 
             // Print the extracted values
             echo "AWS IAM User ARN: ${awsRoleArn[0][1]}"
             echo "AWS External ID: ${awsExternalId[0][1]}"
+            }
         }
     }
-}
+
         stage('Update AWS Role Trust Relationship') {
             steps {
                 withAWS(credentials: 'aws_credentials') {
