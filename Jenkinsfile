@@ -47,7 +47,7 @@ pipeline {
             }
         }
 
-       stage('Fetch Storage AWS IAM User ARN and External ID') {
+      stage('Fetch Storage AWS IAM User ARN and External ID') {
             steps {
                 script {
                     def integrationDetails = sh(
@@ -55,11 +55,11 @@ pipeline {
                         script: 'sudo -u ec2-user snowsql -c my_connection -q "DESC INTEGRATION s3_integration" 2>&1 | grep -E "STORAGE_AWS_ROLE_ARN|STORAGE_AWS_EXTERNAL_ID"'
                     ).trim()
 
-                    def awsRoleArn = integrationDetails =~ /STORAGE_AWS_ROLE_ARN\s+\|\s+(.*)$/
-                    def externalId = integrationDetails =~ /STORAGE_AWS_EXTERNAL_ID\s+\|\s+(.*)$/
+                    def awsRoleArn = integrationDetails =~ /STORAGE_AWS_ROLE_ARN\s+\|\s+([^|]+)/
+                    def externalId = integrationDetails =~ /STORAGE_AWS_EXTERNAL_ID\s+\|\s+([^|]+)/
 
-                    env.STORAGE_AWS_IAM_USER_ARN = awsRoleArn ? awsRoleArn[0][1] : ''
-                    env.STORAGE_AWS_EXTERNAL_ID = externalId ? externalId[0][1] : ''
+                    env.STORAGE_AWS_IAM_USER_ARN = awsRoleArn ? awsRoleArn[0][1].trim() : ''
+                    env.STORAGE_AWS_EXTERNAL_ID = externalId ? externalId[0][1].trim() : ''
 
                     // Log the retrieved values
                     echo "Storage AWS IAM User ARN: ${env.STORAGE_AWS_IAM_USER_ARN}"
