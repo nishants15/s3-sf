@@ -78,7 +78,7 @@ pipeline {
                 withAWS(credentials: 'aws_credentials') {
                     script {
                         // Use the stored environment variables in the command
-                        sh "aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json --sts-region us-west-2 --sts-external-id ${env.STORAGE_AWS_EXTERNAL_ID} --sts-assume-role-arn ${env.STORAGE_AWS_IAM_USER_ARN}"
+                        sh "aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json --sts-region us-east-1 --sts-external-id ${env.STORAGE_AWS_EXTERNAL_ID} --sts-assume-role-arn ${env.STORAGE_AWS_IAM_USER_ARN}"
                     }
                 }
             }
