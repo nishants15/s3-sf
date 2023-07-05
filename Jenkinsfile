@@ -55,6 +55,9 @@ pipeline {
                         script: 'sudo -u ec2-user snowsql -c my_connection -q "DESC INTEGRATION s3_integration" 2>&1 | grep -E "STORAGE_AWS_ROLE_ARN|STORAGE_AWS_EXTERNAL_ID"'
                     ).trim()
 
+                    echo "Integration Details:"
+                    echo integrationDetails
+
                     def awsRoleArnMatch = integrationDetails =~ /STORAGE_AWS_ROLE_ARN\s+\|\s+([^|]+)/
                     def externalIdMatch = integrationDetails =~ /STORAGE_AWS_EXTERNAL_ID\s+\|\s+([^|]+)/
 
