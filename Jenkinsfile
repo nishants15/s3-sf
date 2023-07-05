@@ -77,32 +77,33 @@ pipeline {
             steps {
                 script {
                     def trust_policy_document = """
-{
-    "Version": "2012-10-17",
-    "Statement": [
         {
-            "Effect": "Allow",
-            "Principal": {
-                "AWS": "${env.STORAGE_AWS_IAM_USER_ARN}"
-            },
-            "Action": "sts:AssumeRole",
-            "Condition": {
-                "StringEquals": {
-                    "sts:ExternalId": "${env.STORAGE_AWS_EXTERNAL_ID}"
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "AWS": "${env.STORAGE_AWS_IAM_USER_ARN}"
+                    },
+                    "Action": "sts:AssumeRole",
+                    "Condition": {
+                        "StringEquals": {
+                            "sts:ExternalId": "${env.STORAGE_AWS_EXTERNAL_ID}"
+                        }
+                    }
                 }
-            }
+            ]
         }
-    ]
-}
-"""
+        """
 
                     withAWS(credentials: 'aws_credentials') {
-                        writeFile file: 'trust-policy.json', text: trustPolicyDocument
+                        writeFile file: 'trust-policy.json', text: trust_policy_document
                         sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json'
                     }
                 }
             }
         }
+
         stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
                     steps {
                         sh '''
