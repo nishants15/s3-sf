@@ -77,6 +77,7 @@ pipeline {
             steps {
                 script {
                     def trust_policy_document = """
+def trust_policy_document = """
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -94,7 +95,7 @@ pipeline {
         }
     ]
 }
-"""
+""".trim()
 
                     trust_policy_document = trust_policy_document.trim()
 
