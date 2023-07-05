@@ -47,7 +47,7 @@ pipeline {
             }
         }
 
-        stage('Fetch Storage AWS IAM User ARN and External ID') {
+       stage('Fetch Storage AWS IAM User ARN and External ID') {
             steps {
                 script {
                     def integrationDetails = sh(
@@ -55,20 +55,19 @@ pipeline {
                         script: 'sudo -u ec2-user snowsql -c my_connection -q "DESC INTEGRATION s3_integration" 2>&1 | grep -E "STORAGE_AWS_ROLE_ARN|STORAGE_AWS_EXTERNAL_ID"'
                     ).trim()
 
-                    def awsRoleArn = integrationDetails =~ /STORAGE_AWS_ROLE_ARN\s+\|\s+([^|]+)/
-                    def externalId = integrationDetails =~ /STORAGE_AWS_EXTERNAL_ID\s+\|\s+([^|]+)/
+                    def awsRoleArnMatch = integrationDetails =~ /STORAGE_AWS_ROLE_ARN\s+\|\s+([^|]+)/
+                    def externalIdMatch = integrationDetails =~ /STORAGE_AWS_EXTERNAL_ID\s+\|\s+([^|]+)/
 
-                    env.STORAGE_AWS_IAM_USER_ARN = awsRoleArn ? awsRoleArn[0][1].trim() : ''
-                    env.STORAGE_AWS_EXTERNAL_ID = externalId ? externalId[0][1].trim() : ''
+                    if (awsRoleArnMatch && externalIdMatch) {
+                        env.STORAGE_AWS_IAM_USER_ARN = awsRoleArnMatch[0][1].trim()
+                        env.STORAGE_AWS_EXTERNAL_ID = externalIdMatch[0][1].trim()
+                    } else {
+                        error "Failed to retrieve Storage AWS IAM User ARN and External ID"
+                    }
 
                     // Log the retrieved values
                     echo "Storage AWS IAM User ARN: ${env.STORAGE_AWS_IAM_USER_ARN}"
                     echo "Storage AWS External ID: ${env.STORAGE_AWS_EXTERNAL_ID}"
-
-                    // Validate if values were retrieved successfully
-                    if (env.STORAGE_AWS_IAM_USER_ARN == '' || env.STORAGE_AWS_EXTERNAL_ID == '') {
-                        error "Failed to retrieve Storage AWS IAM User ARN and External ID"
-                    }
                 }
             }
         }
