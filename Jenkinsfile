@@ -47,7 +47,7 @@ pipeline {
             }
         }
 
-      stage('Fetch Storage AWS IAM User ARN and External ID') {
+        stage('Fetch Storage AWS IAM User ARN and External ID') {
             steps {
                 script {
                     def integrationDetails = sh(
@@ -77,7 +77,6 @@ pipeline {
             steps {
                 script {
                     def trust_policy_document = """
-        def trust_policy_document = """
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -96,8 +95,9 @@ pipeline {
     ]
 }
 """
-trust_policy_document = trust_policy_document.replace(" ", "")
-        
+
+                    trust_policy_document = trust_policy_document.replace(" ", "")
+
                     withAWS(credentials: 'aws_credentials') {
                         writeFile file: 'trust-policy.json', text: trust_policy_document
                         sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json'
@@ -107,12 +107,12 @@ trust_policy_document = trust_policy_document.replace(" ", "")
         }
 
         stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
-                    steps {
-                        sh '''
-        sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
-            STORAGE_INTEGRATION = s3_integration
-            FILE_FORMAT = dev_convertr.stage.my_file_format"
-        '''
+            steps {
+                sh '''
+                sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
+                    STORAGE_INTEGRATION = s3_integration
+                    FILE_FORMAT = dev_convertr.stage.my_file_format"
+                '''
             }
         }
     }
