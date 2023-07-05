@@ -73,10 +73,7 @@ pipeline {
             }
         }
 
-        stage('Update AWS Role Trust Relationship') {
-            steps {
-                script {
-                    def trust_policy_document = """
+        def trust_policy_document = """
         {
             "Version": "2012-10-17",
             "Statement": [
@@ -95,6 +92,8 @@ pipeline {
             ]
         }
         """
+
+trust_policy_document = trust_policy_document.replace(" ", "")
 
                     withAWS(credentials: 'aws_credentials') {
                         writeFile file: 'trust-policy.json', text: trust_policy_document
