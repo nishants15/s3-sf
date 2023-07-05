@@ -83,12 +83,12 @@ pipeline {
         {
             "Effect": "Allow",
             "Principal": {
-                "AWS": ${env.STORAGE_AWS_IAM_USER_ARN}"
+                "AWS": "${env.STORAGE_AWS_IAM_USER_ARN}"
             },
             "Action": "sts:AssumeRole",
             "Condition": {
                 "StringEquals": {
-                    "sts:ExternalId": ${env.STORAGE_AWS_EXTERNAL_ID}"
+                    "sts:ExternalId": "${env.STORAGE_AWS_EXTERNAL_ID}"
                 }
             }
         }
