@@ -76,19 +76,19 @@ pipeline {
         stage('Update AWS Role Trust Relationship') {
             steps {
                 script {
-                    def trustPolicyDocument = """
+                    def trust_policy_document = """
 {
     "Version": "2012-10-17",
     "Statement": [
         {
             "Effect": "Allow",
             "Principal": {
-                "AWS": "${env.AWS_ROLE_ARN}"
+                "AWS": ${env.STORAGE_AWS_IAM_USER_ARN}"
             },
             "Action": "sts:AssumeRole",
             "Condition": {
                 "StringEquals": {
-                    "sts:ExternalId": "${env.EXTERNAL_ID}"
+                    "sts:ExternalId": ${env.STORAGE_AWS_EXTERNAL_ID}"
                 }
             }
         }
