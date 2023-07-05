@@ -55,65 +55,41 @@ pipeline {
                         script: 'sudo -u ec2-user snowsql -c my_connection -q "DESC INTEGRATION s3_integration" 2>&1 | grep -E "STORAGE_AWS_ROLE_ARN|STORAGE_AWS_EXTERNAL_ID"'
                     ).trim()
 
-                    echo "Integration Details:"
-                    echo integrationDetails
-
                     def awsRoleArn = integrationDetails =~ /STORAGE_AWS_ROLE_ARN\s+\|\s+(.*)$/ ? (~/$1/)[0] : ''
                     def externalId = integrationDetails =~ /STORAGE_AWS_EXTERNAL_ID\s+\|\s+(.*)$/ ? (~/$1/)[0] : ''
 
-                    env.AWS_ROLE_ARN = awsRoleArn
-                    env.EXTERNAL_ID = externalId
+                    env.STORAGE_AWS_IAM_USER_ARN = awsRoleArn
+                    env.STORAGE_AWS_EXTERNAL_ID = externalId
 
                     // Log the retrieved values
-                    echo "AWS Role ARN: ${awsRoleArn}"
-                    echo "External ID: ${externalId}"
+                    echo "Storage AWS IAM User ARN: ${awsRoleArn}"
+                    echo "Storage AWS External ID: ${externalId}"
 
                     // Validate if values were retrieved successfully
                     if (awsRoleArn == '' || externalId == '') {
-                        error "Failed to retrieve AWS Role ARN and External ID"
+                        error "Failed to retrieve Storage AWS IAM User ARN and External ID"
                     }
                 }
             }
         }
-        
+
         stage('Update AWS Role Trust Relationship') {
             steps {
-                script {
-                    def trustPolicyDocument = """
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Principal": {
-                "AWS": "${env.AWS_ROLE_ARN}"
-            },
-            "Action": "sts:AssumeRole",
-            "Condition": {
-                "StringEquals": {
-                    "sts:ExternalId": "${env.EXTERNAL_ID}"
-                }
-            }
-        }
-    ]
-}
-"""
-
-                    withAWS(credentials: 'aws_credentials') {
-                        writeFile file: 'trust-policy.json', text: trustPolicyDocument
-                        sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json'
+                withAWS(credentials: 'aws_credentials') {
+                    script {
+                        // Use the stored environment variables in the command
+                        sh "aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json --sts-region us-west-2 --sts-external-id ${env.STORAGE_AWS_EXTERNAL_ID} --sts-assume-role-arn ${env.STORAGE_AWS_IAM_USER_ARN}"
                     }
                 }
             }
         }
-
         stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
-            steps {
-                sh '''
-sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
-    STORAGE_INTEGRATION = s3_integration
-    FILE_FORMAT = dev_convertr.stage.my_file_format"
-'''
+                    steps {
+                        sh '''
+        sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
+            STORAGE_INTEGRATION = s3_integration
+            FILE_FORMAT = dev_convertr.stage.my_file_format"
+        '''
             }
         }
     }
