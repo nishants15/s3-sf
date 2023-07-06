@@ -62,35 +62,43 @@ pipeline {
                     def externalIdMatch = integrationDetails =~ /STORAGE_AWS_EXTERNAL_ID\s+\|\s+([^|]+)/
 
                     if (awsRoleArnMatch && externalIdMatch) {
-                        env.STORAGE_AWS_IAM_USER_ARN = awsRoleArnMatch[0][1].trim()
-                        env.STORAGE_AWS_EXTERNAL_ID = externalIdMatch[0][1].trim()
+                        def awsRoleArn = awsRoleArnMatch[0][1].trim()
+                        def externalId = externalIdMatch[0][1].trim()
+                        updateAwsRoleTrustRelationship(awsRoleArn, externalId)
                     } else {
                         error "Failed to retrieve Storage AWS IAM User ARN and External ID"
                     }
-
-                    // Log the retrieved values
-                    echo "Storage AWS IAM User ARN: ${env.STORAGE_AWS_IAM_USER_ARN}"
-                    echo "Storage AWS External ID: ${env.STORAGE_AWS_EXTERNAL_ID}"
                 }
             }
         }
 
-        stage('Update AWS Role Trust Relationship') {
+        stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
             steps {
-                script {
-                    def trust_policy_document = """
+                sh '''
+                sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
+                    STORAGE_INTEGRATION = s3_integration
+                    FILE_FORMAT = dev_convertr.stage.my_file_format"
+                '''
+            }
+        }
+    }
+}
+
+def updateAwsRoleTrustRelationship(awsRoleArn, externalId) {
+    script {
+        def trust_policy_document = """
 {
     "Version": "2012-10-17",
     "Statement": [
         {
             "Effect": "Allow",
             "Principal": {
-                "AWS": "${env.STORAGE_AWS_IAM_USER_ARN}"
+                ""AWS": "${awsRoleArn}"
             },
             "Action": "sts:AssumeRole",
             "Condition": {
                 "StringEquals": {
-                    "sts:ExternalId": "${env.STORAGE_AWS_EXTERNAL_ID}"
+                    "sts:ExternalId": "${externalId}"
                 }
             }
         }
@@ -98,14 +106,13 @@ pipeline {
 }
 """
 
-                    trust_policy_document = trust_policy_document.trim()
+        trust_policy_document = trust_policy_document.trim()
 
-                    writeFile file: 'trust-policy.json', text: trust_policy_document
+        writeFile file: 'trust-policy.json', text: trust_policy_document
 
-                    sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json'
-                }
-            }
-        }
+        sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json'
+    }
+}
 
         stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
             steps {
