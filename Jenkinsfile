@@ -37,7 +37,7 @@ pipeline {
         stage('Create Snowflake Storage Integration') {
             steps {
                 sh '''
-                sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integration s3_integration
+                snowsql -c my_connection -q "create or replace storage integration s3_integration
                     TYPE = EXTERNAL_STAGE
                     STORAGE_PROVIDER = S3
                     ENABLED = TRUE 
@@ -47,24 +47,24 @@ pipeline {
             }
         }
 
-       stage('Fetch Storage AWS IAM User ARN and External ID') {
+        stage('Fetch Storage AWS IAM User ARN and External ID') {
             steps {
                 script {
                     def integrationDetails = sh(
                         returnStdout: true,
-                        script: 'sudo -u ec2-user snowsql -c my_connection -q "DESC INTEGRATION s3_integration" 2>&1 | grep -E "STORAGE_AWS_ROLE_ARN|STORAGE_AWS_EXTERNAL_ID"'
+                        script: 'snowsql -c my_connection -q "DESC INTEGRATION s3_integration" 2>&1'
                     ).trim()
 
                     echo "Integration Details:"
                     echo integrationDetails
 
-                    def awsRoleArnMatch = integrationDetails =~ /STORAGE_AWS_ROLE_ARN\s+\|\s+([^|]+)/
-                    def externalIdMatch = integrationDetails =~ /STORAGE_AWS_EXTERNAL_ID\s+\|\s+([^|]+)/
+                    def awsRoleArn = integrationDetails =~ /STORAGE_AWS_ROLE_ARN\s+\|\s+([^\n]+)/
+                    def externalId = integrationDetails =~ /STORAGE_AWS_EXTERNAL_ID\s+\|\s+([^\n]+)/
 
-                    if (awsRoleArnMatch && externalIdMatch) {
-                        def awsRoleArn = awsRoleArnMatch[0][1].trim()
-                        def externalId = externalIdMatch[0][1].trim()
-                        updateAwsRoleTrustRelationship(awsRoleArn, externalId)
+                    if (awsRoleArn && externalId) {
+                        def awsRoleArnValue = awsRoleArn[0][1].trim()
+                        def externalIdValue = externalId[0][1].trim()
+                        updateAwsRoleTrustRelationship(awsRoleArnValue, externalIdValue)
                     } else {
                         error "Failed to retrieve Storage AWS IAM User ARN and External ID"
                     }
@@ -75,7 +75,7 @@ pipeline {
         stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
             steps {
                 sh '''
-                sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
+                snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
                     STORAGE_INTEGRATION = s3_integration
                     FILE_FORMAT = dev_convertr.stage.my_file_format"
                 '''
@@ -93,7 +93,7 @@ def updateAwsRoleTrustRelationship(awsRoleArn, externalId) {
         {
             "Effect": "Allow",
             "Principal": {
-                ""AWS": "${awsRoleArn}"
+                "AWS": "${awsRoleArn}"
             },
             "Action": "sts:AssumeRole",
             "Condition": {
@@ -111,17 +111,5 @@ def updateAwsRoleTrustRelationship(awsRoleArn, externalId) {
         writeFile file: 'trust-policy.json', text: trust_policy_document
 
         sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json'
-    
-
-
-        stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
-            steps {
-                sh '''
-                sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
-                    STORAGE_INTEGRATION = s3_integration
-                    FILE_FORMAT = dev_convertr.stage.my_file_format"
-                '''
-            }
-        }
     }
 }
