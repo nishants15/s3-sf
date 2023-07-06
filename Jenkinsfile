@@ -37,7 +37,7 @@ pipeline {
         stage('Create Snowflake Storage Integration') {
             steps {
                 sh '''
-                snowsql -c my_connection -q "create or replace storage integration s3_integration
+                sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integration s3_integration
                     TYPE = EXTERNAL_STAGE
                     STORAGE_PROVIDER = S3
                     ENABLED = TRUE 
@@ -52,7 +52,7 @@ pipeline {
                 script {
                     def integrationDetails = sh(
                         returnStdout: true,
-                        script: 'snowsql -c my_connection -q "DESC INTEGRATION s3_integration" 2>&1'
+                        script: 'sudo -u ec2-user snowsql -c my_connection -q "DESC INTEGRATION s3_integration" 2>&1'
                     ).trim()
 
                     echo "Integration Details:"
@@ -75,7 +75,7 @@ pipeline {
         stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
             steps {
                 sh '''
-                snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
+                sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
                     STORAGE_INTEGRATION = s3_integration
                     FILE_FORMAT = dev_convertr.stage.my_file_format"
                 '''
