@@ -16,8 +16,10 @@ pipeline {
     stages {
         stage('Create IAM Role') {
             steps {
-                sh "aws iam create-role --role-name ${IAM_ROLE_NAME} --assume-role-policy-document file://trust-policy.json"
-                sh "aws iam attach-role-policy --role-name ${IAM_ROLE_NAME} --policy-arn ${IAM_POLICY_ARN}"
+                withCredentials([aws(credentialsId: 'aws_credentials', region: "${AWS_REGION}")]) {
+                    sh "aws iam create-role --role-name ${IAM_ROLE_NAME} --assume-role-policy-document file://trust-policy.json"
+                    sh "aws iam attach-role-policy --role-name ${IAM_ROLE_NAME} --policy-arn ${IAM_POLICY_ARN}"
+                }
             }
         }
 
@@ -41,7 +43,7 @@ pipeline {
             }
         }
 
-        stage('Update IAM Role Trust Relationship') {
+       stage('Update IAM Role Trust Relationship') {
             steps {
                 script {
                     def trustPolicy = readJSON file: 'trust-policy.json'
@@ -49,7 +51,9 @@ pipeline {
                     trustPolicy.Statement[0].Condition.StringEquals['snowflake:externalId'] = env.STORAGE_AWS_EXTERNAL_ID
                     writeFile file: 'trust-policy.json', text: groovy.json.JsonOutput.toJson(trustPolicy)
                 }
-                sh "aws iam update-assume-role-policy --role-name ${IAM_ROLE_NAME} --policy-document file://trust-policy.json"
+                withCredentials([aws(credentialsId: 'aws_credentials', region: "${AWS_REGION}")]) {
+                    sh "aws iam update-assume-role-policy --role-name ${IAM_ROLE_NAME} --policy-document file://trust-policy.json"
+                }
             }
         }
 
