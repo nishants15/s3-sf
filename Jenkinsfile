@@ -14,14 +14,39 @@ pipeline {
     }
 
     stages {
-        stage('Create IAM Role') {
+        stage('Create AWS Role') {
             steps {
-                withCredentials([aws(credentialsId: 'aws_credentials', region: "${AWS_REGION}")]) {
-                    sh "aws iam create-role --role-name ${IAM_ROLE_NAME} --assume-role-policy-document file://trust-policy.json"
-                    sh "aws iam attach-role-policy --role-name ${IAM_ROLE_NAME} --policy-arn ${IAM_POLICY_ARN}"
+                script {
+                    def trust_policy_document = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::988231236474:root"
+            },
+            "Action": "sts:AssumeRole",
+            "Condition": {
+                "StringEquals": {
+                    "sts:ExternalId": "000000"
                 }
             }
         }
+    ]
+}
+"""
+
+                    trust_policy_document = trust_policy_document.strip()
+
+                    withAWS(credentials: 'aws_credentials') {
+                        writeFile file: 'trust-policy.json', text: trust_policy_document
+                        sh 'aws iam create-role --role-name snowflake-role --assume-role-policy-document file://trust-policy.json'
+                    }
+                }
+            }
+        }
+
 
         stage('Create Storage Integration') {
             steps {
