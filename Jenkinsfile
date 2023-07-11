@@ -59,7 +59,7 @@ pipeline {
                     echo integrationDetails
 
                     def awsRoleArnValue = extractValue(integrationDetails, 'STORAGE_AWS_ROLE_ARN')
-                    def externalIdValue = extractValue(integrationDetails, 'STORAGE_AWS_EXTERNAL_ID')
+                    def externalIdValue = extractValue(integrationDetails, 'STORAGE_AWS_EXTERNAL_ID', '=')
                     def iamUserArnValue = extractValue(integrationDetails, 'STORAGE_AWS_IAM_USER_ARN')
 
                     if (awsRoleArnValue && externalIdValue && iamUserArnValue) {
@@ -83,10 +83,10 @@ pipeline {
     }
 }
 
-def extractValue(integrationDetails, propertyName) {
+def extractValue(integrationDetails, propertyName, delimiter = '|') {
     def lines = integrationDetails.readLines()
     for (def line : lines) {
-        def columns = line.trim().split('\\|')
+        def columns = line.trim().split('\\' + delimiter)
         if (columns.size() == 4 && columns[1].trim() == propertyName) {
             return columns[2].trim()
         }
