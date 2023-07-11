@@ -1,3 +1,5 @@
+import hudson.EnvVars
+
 pipeline {
     agent any
     stages {
@@ -74,14 +76,29 @@ pipeline {
 
         stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
             steps {
-                sh '''
-                sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
-                    STORAGE_INTEGRATION = s3_integration
-                    FILE_FORMAT = dev_convertr.stage.my_file_format"
-                '''
+                withCredentials([string(credentialsId: 'snowflake_credentials', variable: 'snowflake_creds')]) {
+                    script {
+                        sh """
+                        sudo -u ec2-user snowsql -c my_connection -q \\"create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
+                        STORAGE_INTEGRATION = s3_integration
+                        FILE_FORMAT = dev_convertr.stage.my_file_format\\" --authenticator=externalbrowser --keychain-host=${env.JENKINS_URL}
+                        """
+                    }
+                }
             }
         }
     }
+}
+
+def extractValue(integrationDetails, key) {
+    def lines = integrationDetails.readLines()
+    for (def line : lines) {
+        def parts = line.trim().split('\\|')
+        if (parts.size() == 3 && parts[1].trim() == key) {
+            return parts[2].trim()
+        }
+    }
+    return null
 }
 
 def updateAwsRoleTrustRelationship(awsRoleArn, externalId) {
@@ -111,8 +128,5 @@ def updateAwsRoleTrustRelationship(awsRoleArn, externalId) {
         writeFile file: 'trust-policy.json', text: trust_policy_document
 
         sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json'
-
-        // Print the updated trust policy for verification
-        sh 'aws iam get-role --role-name snowflake-role'
     }
 }
