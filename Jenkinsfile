@@ -71,15 +71,15 @@ pipeline {
                 }
             }
         }
-    }
-    
-    stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
-        steps {
-            sh '''
-            sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
-                STORAGE_INTEGRATION = s3_integration
-                FILE_FORMAT = dev_convertr.stage.my_file_format"
-            '''
+
+        stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
+            steps {
+                sh '''
+                sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
+                    STORAGE_INTEGRATION = s3_integration
+                    FILE_FORMAT = dev_convertr.stage.my_file_format"
+                '''
+            }
         }
     }
 }
