@@ -1,6 +1,5 @@
 pipeline {
     agent any
-
     stages {
         stage('Create AWS Role') {
             steps {
@@ -47,7 +46,7 @@ pipeline {
                 '''
             }
         }
-
+        
         stage('Fetch Storage AWS IAM User ARN and External ID') {
             steps {
                 script {
@@ -72,56 +71,15 @@ pipeline {
                 }
             }
         }
-
-        stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
-            steps {
-                sh '''
-                sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
-                    STORAGE_INTEGRATION = s3_integration
-                    FILE_FORMAT = dev_convertr.stage.my_file_format"
-                '''
-            }
-        }
     }
-}
-
-def extractValue(integrationDetails, propertyName, delimiter = '|') {
-    def lines = integrationDetails.readLines()
-    for (def line : lines) {
-        def columns = line.trim().split('\\' + delimiter)
-        if (columns.size() == 4 && columns[1].trim() == propertyName) {
-            return columns[2].trim()
+    
+    stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
+        steps {
+            sh '''
+            sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
+                STORAGE_INTEGRATION = s3_integration
+                FILE_FORMAT = dev_convertr.stage.my_file_format"
+            '''
         }
-    }
-    return null
-}
-
-def updateAwsRoleTrustRelationship(awsRoleArn, externalId, iamUserArn) {
-    script {
-        def trust_policy_document = """
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Principal": {
-                "AWS": "${awsRoleArn}"
-            },
-            "Action": "sts:AssumeRole",
-            "Condition": {
-                "StringEquals": {
-                    "sts:ExternalId": "${externalId}"
-                }
-            }
-        }
-    ]
-}
-"""
-
-        trust_policy_document = trust_policy_document.trim()
-
-        writeFile file: 'trust-policy.json', text: trust_policy_document
-
-        sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json'
     }
 }
