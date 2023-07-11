@@ -47,33 +47,33 @@ pipeline {
             }
         }
 
+        stages {
         stage('Fetch Storage AWS IAM User ARN and External ID') {
             steps {
                 script {
-                    def iamUserArnQuery = "SELECT PROPERTY_VALUE FROM SNOWFLAKE.ACCOUNT_INTEGRATION_PROPERTIES WHERE INTEGRATION_NAME = 'S3_INTEGRATION' AND PROPERTY_NAME = 'STORAGE_AWS_IAM_USER_ARN'"
-                    def externalIdQuery = "SELECT PROPERTY_VALUE FROM SNOWFLAKE.ACCOUNT_INTEGRATION_PROPERTIES WHERE INTEGRATION_NAME = 'S3_INTEGRATION' AND PROPERTY_NAME = 'STORAGE_AWS_EXTERNAL_ID'"
-
-                    def iamUserArnResult = sh(
+                    def storageAwsIamUserArn = sh(
                         returnStdout: true,
-                        script: "sudo -u ec2-user snowsql -c my_connection -q '${iamUserArnQuery}'"
+                        script: "sudo -u ec2-user snowsql -c my_connection -q 'DESC INTEGRATION s3_integration' | grep 'STORAGE_AWS_IAM_USER_ARN' | awk -F'|' '{print \$3}' | tr -d '[:space:]'"
                     ).trim()
-
-                    def externalIdResult = sh(
+                    
+                    def storageAwsExternalId = sh(
                         returnStdout: true,
-                        script: "sudo -u ec2-user snowsql -c my_connection -q '${externalIdQuery}'"
+                        script: "sudo -u ec2-user snowsql -c my_connection -q 'DESC INTEGRATION s3_integration' | grep 'STORAGE_AWS_EXTERNAL_ID' | awk -F'|' '{print \$3}' | tr -d '[:space:]'"
                     ).trim()
-
-                    def iamUserArn = parseQueryResult(iamUserArnResult)
-                    def externalId = parseQueryResult(externalIdResult)
-
-                    if (iamUserArn && externalId) {
-                        updateAwsRoleTrustRelationship(externalId, iamUserArn)
-                    } else {
-                        error "Failed to retrieve Storage AWS IAM User ARN and External ID"
+                    
+                    // Use the extracted values in the next stage (Update AWS IAM Role)
+                    // Modify the following stage according to your requirements
+                    stage('Update AWS IAM Role') {
+                        steps {
+                            // Use the extracted values in your code to update the AWS IAM Role
+                            sh "aws iam update-role --role-name accountadmin --aws-iam-user-arn '${storageAwsIamUserArn}' --external-id '${storageAwsExternalId}'"
+                        }
                     }
                 }
             }
         }
+    }
+
         stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
             steps {
                 sh '''
