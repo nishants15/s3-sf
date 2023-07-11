@@ -46,8 +46,6 @@ pipeline {
                 '''
             }
         }
-
-        stages {
         stage('Fetch Storage AWS IAM User ARN and External ID') {
             steps {
                 script {
@@ -84,7 +82,7 @@ pipeline {
             }
         }
     }
-}
+
 
 def extractValue(integrationDetails, propertyName, delimiter = '|') {
     def lines = integrationDetails.readLines()
