@@ -67,8 +67,8 @@ pipeline {
                             FILE_FORMAT = dev_convertr.stage.my_file_format"
                         '''
                     }
-                }
-            }
-        }
-    }
-}
+                } // Close script block
+            } // Close steps block
+        } // Close Deployment stage
+    } // Close stages block
+} // Close pipeline block
