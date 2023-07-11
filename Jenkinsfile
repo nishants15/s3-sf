@@ -5,7 +5,6 @@ pipeline {
             steps {
                 script {
                     stage('Create AWS Role') {
-                        sh '''
                         def trust_policy_document = '''
                         {
                             "Version": "2012-10-17",
