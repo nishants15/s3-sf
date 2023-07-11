@@ -36,14 +36,16 @@ pipeline {
 
         stage('Create Snowflake Storage Integration') {
             steps {
-                sh '''
-                sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integration s3_integration
-                    TYPE = EXTERNAL_STAGE
-                    STORAGE_PROVIDER = S3
-                    ENABLED = TRUE 
-                    STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::988231236474:role/snowflake-role'
-                    STORAGE_ALLOWED_LOCATIONS = ('s3://snowflake-input12')"
-                '''
+                script {
+                    sh '''
+                    sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integration s3_integration
+                        TYPE = EXTERNAL_STAGE
+                        STORAGE_PROVIDER = S3
+                        ENABLED = TRUE 
+                        STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::988231236474:role/snowflake-role'
+                        STORAGE_ALLOWED_LOCATIONS = ('s3://snowflake-input12')"
+                    '''
+                }
             }
         }
         
@@ -74,11 +76,13 @@ pipeline {
 
         stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
             steps {
-                sh '''
-                sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
-                    STORAGE_INTEGRATION = s3_integration
-                    FILE_FORMAT = dev_convertr.stage.my_file_format"
-                '''
+                script {
+                    sh '''
+                    sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
+                        STORAGE_INTEGRATION = s3_integration
+                        FILE_FORMAT = dev_convertr.stage.my_file_format"
+                    '''
+                }
             }
         }
     }
