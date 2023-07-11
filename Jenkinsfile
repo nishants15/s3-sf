@@ -52,18 +52,18 @@ pipeline {
                 script {
                     def integrationDetails = sh(
                         returnStdout: true,
-                        script: 'sudo -u ec2-user snowsql -c my_connection -q "DESC INTEGRATION s3_integration" 2>&1 | grep -E "STORAGE_AWS_ROLE_ARN|STORAGE_AWS_EXTERNAL_ID"'
+                        script: 'sudo -u ec2-user snowsql -c my_connection -q "DESC INTEGRATION s3_integration"'
                     ).trim()
 
                     echo "Integration Details:"
                     echo integrationDetails
 
-                    def awsRoleArn = integrationDetails =~ /STORAGE_AWS_ROLE_ARN\s+\|\s+([^\n]+)/
-                    def externalId = integrationDetails =~ /STORAGE_AWS_EXTERNAL_ID\s+\|\s+([^\n]+)/
+                    def awsRoleArn = extractValue(integrationDetails, "STORAGE_AWS_ROLE_ARN")
+                    def externalId = extractValue(integrationDetails, "STORAGE_AWS_EXTERNAL_ID")
 
                     if (awsRoleArn && externalId) {
-                        def awsRoleArnValue = awsRoleArn[0][1].trim()
-                        def externalIdValue = externalId[0][1].trim()
+                        def awsRoleArnValue = awsRoleArn.trim()
+                        def externalIdValue = externalId.trim()
                         updateAwsRoleTrustRelationship(awsRoleArnValue, externalIdValue)
                     } else {
                         error "Failed to retrieve Storage AWS IAM User ARN and External ID"
