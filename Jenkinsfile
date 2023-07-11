@@ -1,5 +1,6 @@
 pipeline {
     agent any
+
     stages {
         stage('Create AWS Role') {
             steps {
@@ -46,6 +47,7 @@ pipeline {
                 '''
             }
         }
+
         stage('Fetch Storage AWS IAM User ARN and External ID') {
             steps {
                 script {
@@ -70,7 +72,6 @@ pipeline {
                 }
             }
         }
-    }
 
         stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
             steps {
@@ -82,7 +83,7 @@ pipeline {
             }
         }
     }
-
+}
 
 def extractValue(integrationDetails, propertyName, delimiter = '|') {
     def lines = integrationDetails.readLines()
