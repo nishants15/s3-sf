@@ -55,29 +55,7 @@ pipeline {
                         ).trim()
 
                         stage('Update AWS IAM Role') {
-                            def assumeRolePolicyDocument = '''
-                            {
-                                "Version": "2012-10-17",
-                                "Statement": [
-                                    {
-                                        "Effect": "Allow",
-                                        "Principal": {
-                                            "AWS": "${storageAwsIamUserArn}"
-                                        },
-                                        "Action": "sts:AssumeRole",
-                                        "Condition": {
-                                            "StringEquals": {
-                                                "sts:ExternalId": "${storageAwsExternalId}"
-                                            }
-                                        }
-                                    }
-                                ]
-                            }
-                            '''
-                            assumeRolePolicyDocument = assumeRolePolicyDocument.strip()
-
-                            sh 'echo \'${assumeRolePolicyDocument}\' > assume-role-policy.json'
-                            sh 'aws iam update-role --role-name accountadmin --assume-role-policy-document file://assume-role-policy.json'
+                            sh "aws iam update-role --role-name accountadmin --assume-role-policy-document file://trust-policy.json"
                         }
                     }
 
