@@ -1,5 +1,3 @@
-import hudson.EnvVars
-
 pipeline {
     agent any
     stages {
@@ -60,13 +58,12 @@ pipeline {
                     echo "Integration Details:"
                     echo integrationDetails
 
-                    def awsRoleArn = extractValue(integrationDetails, "STORAGE_AWS_ROLE_ARN")
-                    def externalId = extractValue(integrationDetails, "STORAGE_AWS_EXTERNAL_ID")
+                    def awsRoleArnValue = extractValue(integrationDetails, 'STORAGE_AWS_ROLE_ARN')
+                    def externalIdValue = extractValue(integrationDetails, 'STORAGE_AWS_EXTERNAL_ID')
+                    def iamUserArnValue = extractValue(integrationDetails, 'STORAGE_AWS_IAM_USER_ARN')
 
-                    if (awsRoleArn && externalId) {
-                        def awsRoleArnValue = awsRoleArn.trim()
-                        def externalIdValue = externalId.trim()
-                        updateAwsRoleTrustRelationship(awsRoleArnValue, externalIdValue)
+                    if (awsRoleArnValue && externalIdValue && iamUserArnValue) {
+                        updateAwsRoleTrustRelationship(awsRoleArnValue, externalIdValue, iamUserArnValue)
                     } else {
                         error "Failed to retrieve Storage AWS IAM User ARN and External ID"
                     }
@@ -76,32 +73,28 @@ pipeline {
 
         stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
             steps {
-                withCredentials([string(credentialsId: 'snowflake_credentials', variable: 'snowflake_creds')]) {
-                    script {
-                        sh """
-                        sudo -u ec2-user snowsql -c my_connection -q \\"create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
-                        STORAGE_INTEGRATION = s3_integration
-                        FILE_FORMAT = dev_convertr.stage.my_file_format\\" --authenticator=externalbrowser --keychain-host=${env.JENKINS_URL}
-                        """
-                    }
-                }
+                sh '''
+                sudo -u ec2-user snowsql -c my_connection -q "create or replace stage dev_convertr.stage.s3_stage url='s3://snowflake-input12'
+                    STORAGE_INTEGRATION = s3_integration
+                    FILE_FORMAT = dev_convertr.stage.my_file_format"
+                '''
             }
         }
     }
 }
 
-def extractValue(integrationDetails, key) {
+def extractValue(integrationDetails, propertyName) {
     def lines = integrationDetails.readLines()
     for (def line : lines) {
-        def parts = line.trim().split('\\|')
-        if (parts.size() == 3 && parts[1].trim() == key) {
-            return parts[2].trim()
+        def columns = line.trim().split('\\|')
+        if (columns.size() == 4 && columns[1].trim() == propertyName) {
+            return columns[2].trim()
         }
     }
     return null
 }
 
-def updateAwsRoleTrustRelationship(awsRoleArn, externalId) {
+def updateAwsRoleTrustRelationship(awsRoleArn, externalId, iamUserArn) {
     script {
         def trust_policy_document = """
 {
