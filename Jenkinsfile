@@ -50,27 +50,30 @@ pipeline {
         stage('Fetch Storage AWS IAM User ARN and External ID') {
             steps {
                 script {
-                    def integrationDetails = sh(
+                    def iamUserArnQuery = "SELECT PROPERTY_VALUE FROM SNOWFLAKE.ACCOUNT_INTEGRATION_PROPERTIES WHERE INTEGRATION_NAME = 'S3_INTEGRATION' AND PROPERTY_NAME = 'STORAGE_AWS_IAM_USER_ARN'"
+                    def externalIdQuery = "SELECT PROPERTY_VALUE FROM SNOWFLAKE.ACCOUNT_INTEGRATION_PROPERTIES WHERE INTEGRATION_NAME = 'S3_INTEGRATION' AND PROPERTY_NAME = 'STORAGE_AWS_EXTERNAL_ID'"
+
+                    def iamUserArnResult = sh(
                         returnStdout: true,
-                        script: 'sudo -u ec2-user snowsql -c my_connection -q "DESC INTEGRATION s3_integration"'
+                        script: "sudo -u ec2-user snowsql -c my_connection -q '${iamUserArnQuery}'"
                     ).trim()
 
-                    echo "Integration Details:"
-                    echo integrationDetails
+                    def externalIdResult = sh(
+                        returnStdout: true,
+                        script: "sudo -u ec2-user snowsql -c my_connection -q '${externalIdQuery}'"
+                    ).trim()
 
-                    def awsRoleArnValue = extractValue(integrationDetails, 'STORAGE_AWS_ROLE_ARN')
-                    def externalIdValue = extractValue(integrationDetails, 'STORAGE_AWS_EXTERNAL_ID', '=')
-                    def iamUserArnValue = extractValue(integrationDetails, 'STORAGE_AWS_IAM_USER_ARN')
+                    def iamUserArn = parseQueryResult(iamUserArnResult)
+                    def externalId = parseQueryResult(externalIdResult)
 
-                    if (awsRoleArnValue && externalIdValue && iamUserArnValue) {
-                        updateAwsRoleTrustRelationship(awsRoleArnValue, externalIdValue, iamUserArnValue)
+                    if (iamUserArn && externalId) {
+                        updateAwsRoleTrustRelationship(externalId, iamUserArn)
                     } else {
                         error "Failed to retrieve Storage AWS IAM User ARN and External ID"
                     }
                 }
             }
         }
-
         stage('Create Stage in Snowflake Account Using Storage Int and S3 URL') {
             steps {
                 sh '''
