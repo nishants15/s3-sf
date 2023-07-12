@@ -88,7 +88,7 @@ pipeline {
     ]
 }
 """
-                    trust_Policy_Document = trust_Policy_Document.strip()
+                    trustPolicyDocument = trustPolicyDocument.strip()
                     
                     withAWS(credentials: 'aws_credentials') {
                         writeFile file: 'trust-policy.json', text: trustPolicyDocument
