@@ -69,7 +69,7 @@ pipeline {
         stage('Update AWS IAM Role Trust Relationship') {
             steps {
                 script {
-                    def trustPolicyDocument = """
+                    def trust_Policy_Document = '''
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -87,8 +87,8 @@ pipeline {
         }
     ]
 }
-"""
-                    trustPolicyDocument = trustPolicyDocument.strip()
+'''
+                    trust_Policy_Document = trust_Policy_Document.strip()
                     
                     withAWS(credentials: 'aws_credentials') {
                         writeFile file: 'trust-policy.json', text: trustPolicyDocument
