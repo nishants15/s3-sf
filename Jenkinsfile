@@ -1,7 +1,7 @@
 pipeline {
     agent any
     stages {
-        stage('Create AWS Role') {
+            stage('Create AWS Role') {
             steps {
                 withAWS(credentials: 'aws_credentials') {
                     script {
@@ -26,9 +26,9 @@ pipeline {
                         '''
                         trustPolicyDocument = trustPolicyDocument.strip()
 
-                        // Create the trust-policy.json file in the /home/ec2 directory
-                        writeFile file: '/home/ec2/trust-policy.json', text: trustPolicyDocument
-                        sh 'aws iam create-role --role-name snowflake-role --assume-role-policy-document file:///home/ec2/trust-policy.json'
+                        // Create the trust-policy.json file in the /home/ec2 directory with sudo
+                        writeFile file: '/home/ec2/trust-policy.json', text: trustPolicyDocument, using: 'sudo'
+                        sh 'sudo aws iam create-role --role-name snowflake-role --assume-role-policy-document file:///home/ec2/trust-policy.json'
                     }
                 }
             }
@@ -72,11 +72,11 @@ pipeline {
             steps {
                 withAWS(credentials: 'aws_credentials') {
                     script {
-                        // Read the trust-policy.json file from the /home/ec2 directory
-                        def trustPolicyDocument = readFile file: '/home/ec2/trust-policy.json'
+                        // Read the trust-policy.json file from the /home/ec2 directory with sudo
+                        def trustPolicyDocument = readFile file: '/home/ec2/trust-policy.json', using: 'sudo'
 
-                        writeFile file: '/home/ec2/trust-policy.json', text: trustPolicyDocument
-                        sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file:///home/ec2/trust-policy.json'
+                        writeFile file: '/home/ec2/trust-policy.json', text: trustPolicyDocument, using: 'sudo'
+                        sh 'sudo aws iam update-assume-role-policy --role-name snowflake-role --policy-document file:///home/ec2/trust-policy.json'
                     }
                 }
             }
