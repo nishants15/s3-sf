@@ -67,32 +67,33 @@ pipeline {
         }
 
 
-        stage('Update AWS IAM Role Trust Relationship') {
-    steps {
-        script {
-            def trustPolicyDocument = """
-{
-    "Version": "2012-10-17",
-    "Statement": [
+                stage('Update AWS IAM Role Trust Relationship') {
+            steps {
+                script {
+                    def trustPolicyDocument = """
         {
-            "Effect": "Allow",
-            "Principal": {
-                "AWS": "${env.STORAGE_AWS_IAM_USER_ARN}"
-            },
-            "Action": "sts:AssumeRole",
-            "Condition": {
-                "StringEquals": {
-                    "sts:ExternalId": "${env.STORAGE_AWS_EXTERNAL_ID}"
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "AWS": "${env.STORAGE_AWS_IAM_USER_ARN}"
+                    },
+                    "Action": "sts:AssumeRole",
+                    "Condition": {
+                        "StringEquals": {
+                            "sts:ExternalId": "${env.STORAGE_AWS_EXTERNAL_ID}"
+                        }
+                    }
                 }
-            }
+            ]
         }
-    ]
-}
-"""
+        """
                     trustPolicyDocument = trustPolicyDocument.strip()
 
+                    writeFile file: 'trust-policy.json', text: trustPolicyDocument
+
                     withAWS(credentials: 'aws_credentials') {
-                        writeFile file: 'trust-policy.json', text: trustPolicyDocument
                         sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json'
                     }
                 }
