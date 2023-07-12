@@ -26,7 +26,7 @@ pipeline {
                     trust_policy_document = trust_policy_document.strip()
 
                     withAWS(credentials: 'aws_credentials') {
-                        writeFile file: 'trust-policy.json', text: trust_policy_document
+                        writeFile file: 'iam-policy.json', text: trust_policy_document
                         sh 'aws iam create-role --role-name snowflake-role --assume-role-policy-document file://trust-policy.json'
                     }
                 }
