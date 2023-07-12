@@ -51,12 +51,12 @@ pipeline {
                 script {
                     def storageAwsIamUserArn = sh(
                         returnStdout: true,
-                        script: "export STORAGE_AWS_IAM_USER_ARN=\$(snowsql -c my_connection -r accountadmin -q \"DESC INTEGRATION s3_integration\" | grep 'STORAGE_AWS_IAM_USER_ARN' | awk -F'|' '{print \$3}' | tr -d '[:space:]') && echo \$STORAGE_AWS_IAM_USER_ARN"
+                        script: "export STORAGE_AWS_IAM_USER_ARN=\$(sudo -u ec2-user snowsql -c my_connection -q \"DESC INTEGRATION s3_integration\" | grep 'STORAGE_AWS_IAM_USER_ARN' | awk -F'|' '{print \$3}' | tr -d '[:space:]') && echo \$STORAGE_AWS_IAM_USER_ARN"
                     ).trim()
 
                     def storageAwsExternalId = sh(
                         returnStdout: true,
-                        script: "export STORAGE_AWS_EXTERNAL_ID=\$(snowsql -c my_connection -r accountadmin -q \"DESC INTEGRATION s3_integration\" | grep 'STORAGE_AWS_EXTERNAL_ID' | awk -F'|' '{print \$3}' | tr -d '[:space:]') && echo \$STORAGE_AWS_EXTERNAL_ID"
+                        script: "export STORAGE_AWS_EXTERNAL_ID=\$(sudo -u ec2-user snowsql -c my_connection -q \"DESC INTEGRATION s3_integration\" | grep 'STORAGE_AWS_EXTERNAL_ID' | awk -F'|' '{print \$3}' | tr -d '[:space:]') && echo \$STORAGE_AWS_EXTERNAL_ID"
                     ).trim()
 
                     // Store the fetched values as environment variables for later use
