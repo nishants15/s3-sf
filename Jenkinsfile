@@ -67,13 +67,13 @@ pipeline {
         }
 
         stage('Update AWS IAM Role Trust Relationship') {
-    steps {
-        script {
+            steps {
+                script {
                     def trustPolicyDocument = """
         {
             "Version": "2012-10-17",
             "Statement": [
-                
+                {
                     "Effect": "Allow",
                     "Principal": {
                         "AWS": "${env.STORAGE_AWS_IAM_USER_ARN}"
@@ -89,10 +89,12 @@ pipeline {
         }
         """
                     trustPolicyDocument = trustPolicyDocument.strip()
-                    
-                    def modifiedPolicyDocument = trustPolicyDocument.replaceAll('"AWS":', '"AWS":["')
-                    modifiedPolicyDocument = modifiedPolicyDocument.replaceAll('}', '"]}')
-                    
+
+                    def modifiedPolicyDocument = sh(
+                        returnStdout: true,
+                        script: "echo '${trustPolicyDocument}' | jq '.'"
+                    ).trim()
+
                     withAWS(credentials: 'aws_credentials') {
                         writeFile file: 'trust-policy.json', text: modifiedPolicyDocument
                         sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json'
