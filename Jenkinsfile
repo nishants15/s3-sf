@@ -51,14 +51,14 @@ pipeline {
                 script {
                     def storageAwsIamUserArn = sh(
                         returnStdout: true,
-                        script: "sudo -u ec2-user snowsql -c my_connection -q 'DESC INTEGRATION s3_integration' | grep 'STORAGE_AWS_IAM_USER_ARN' | awk -F'|' '{print \$3}' | tr -d '[:space:]'"
+                        script: "export STORAGE_AWS_IAM_USER_ARN=$(snowsql -c my_connection -r accountadmin -q \"DESC INTEGRATION s3_integration\" | grep 'STORAGE_AWS_IAM_USER_ARN' | awk -F'|' '{print \$3}' | tr -d '[:space:]') && echo \$STORAGE_AWS_IAM_USER_ARN"
                     ).trim()
 
                     def storageAwsExternalId = sh(
                         returnStdout: true,
-                        script: "sudo -u ec2-user snowsql -c my_connection -q 'DESC INTEGRATION s3_integration' | grep 'STORAGE_AWS_EXTERNAL_ID' | awk -F'|' '{print \$3}' | tr -d '[:space:]'"
+                        script: "export STORAGE_AWS_EXTERNAL_ID=$(snowsql -c my_connection -r accountadmin -q \"DESC INTEGRATION s3_integration\" | grep 'STORAGE_AWS_EXTERNAL_ID' | awk -F'|' '{print \$3}' | tr -d '[:space:]') && echo \$STORAGE_AWS_EXTERNAL_ID"
                     ).trim()
-                    
+
                     // Store the fetched values as environment variables for later use
                     env.STORAGE_AWS_IAM_USER_ARN = storageAwsIamUserArn
                     env.STORAGE_AWS_EXTERNAL_ID = storageAwsExternalId
@@ -66,37 +66,33 @@ pipeline {
             }
         }
 
+
         stage('Update AWS IAM Role Trust Relationship') {
-            steps {
-                script {
-                    def trustPolicyDocument = """
+    steps {
+        script {
+            def trustPolicyDocument = """
+{
+    "Version": "2012-10-17",
+    "Statement": [
         {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Principal": {
-                        "AWS": "${env.STORAGE_AWS_IAM_USER_ARN}"
-                    },
-                    "Action": "sts:AssumeRole",
-                    "Condition": {
-                        "StringEquals": {
-                            "sts:ExternalId": "${env.STORAGE_AWS_EXTERNAL_ID}"
-                        }
-                    }
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "${env.STORAGE_AWS_IAM_USER_ARN}"
+            },
+            "Action": "sts:AssumeRole",
+            "Condition": {
+                "StringEquals": {
+                    "sts:ExternalId": "${env.STORAGE_AWS_EXTERNAL_ID}"
                 }
-            ]
+            }
         }
-        """
+    ]
+}
+"""
                     trustPolicyDocument = trustPolicyDocument.strip()
 
-                    def modifiedPolicyDocument = sh(
-                        returnStdout: true,
-                        script: "echo '${trustPolicyDocument}' | jq '.'"
-                    ).trim()
-
                     withAWS(credentials: 'aws_credentials') {
-                        writeFile file: 'trust-policy.json', text: modifiedPolicyDocument
+                        writeFile file: 'trust-policy.json', text: trustPolicyDocument
                         sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json'
                     }
                 }
