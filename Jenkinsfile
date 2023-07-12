@@ -26,7 +26,7 @@ pipeline {
                     trust_policy_document = trust_policy_document.strip()
 
                     withAWS(credentials: 'aws_credentials') {
-                        writeFile file: 'iam-policy.json', text: trust_policy_document
+                        writeFile file: 'trust-policy.json', text: trust_policy_document
                         sh 'aws iam create-role --role-name snowflake-role --assume-role-policy-document file://trust-policy.json'
                     }
                 }
@@ -67,7 +67,7 @@ pipeline {
         }
 
 
-                stage('Update AWS IAM Role Trust Relationship') {
+            stage('Update AWS IAM Role Trust Relationship') {
             steps {
                 script {
                     def trustPolicyDocument = """
@@ -91,7 +91,7 @@ pipeline {
         """
                     trustPolicyDocument = trustPolicyDocument.strip()
 
-                    writeFile file: 'iam-policy.json', text: trustPolicyDocument
+                    writeFile file: 'trust-policy.json', text: trustPolicyDocument
 
                     withAWS(credentials: 'aws_credentials') {
                         sh 'aws iam update-assume-role-policy --role-name snowflake-role --policy-document file://trust-policy.json'
