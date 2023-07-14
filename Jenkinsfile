@@ -1,7 +1,7 @@
 pipeline {
     agent any
 
-       stages {
+    stages {
         stage('Add Policy Document') {
             steps {
                 script {
@@ -96,7 +96,9 @@ pipeline {
                     '''
 
                     withAWS(credentials: 'aws_credentials') {
-                        // Add code to execute the Snowflake storage integration query here
+                        sh """
+                            ${integrationQuery.replace('<aws_account_id>', '988231236474')}
+                        """
                     }
                 }
             }
@@ -111,12 +113,10 @@ pipeline {
                         DESCRIBE INTEGRATION ''' + integrationName + ''';
                     '''
 
-                    def integrationDescriptionOutput = withAWS(credentials: 'aws_credentials') {
-                        sh(
-                            script: "sudo -u ec2-user snowsql -c my_connection -q '${integrationDescriptionQuery}'",
-                            returnStdout: true
-                        ).trim()
-                    }
+                    def integrationDescriptionOutput = sh(
+                        script: "sudo -u ec2-user snowsql -c my_connection -q '${integrationDescriptionQuery}'",
+                        returnStdout: true
+                    ).trim()
 
                     // Parse the output to extract STORAGE_AWS_IAM_USER_ARN and STORAGE_AWS_EXTERNAL_ID
                     def userArn = integrationDescriptionOutput =~ /STORAGE_AWS_IAM_USER_ARN\s*\|\s*(.*?)\s*\|/
@@ -129,13 +129,7 @@ pipeline {
                     // Use the extracted values for further steps
                     echo "Storage AWS IAM User ARN: ${storageAwsIamUserArn}"
                     echo "Storage AWS External ID: ${storageAwsExternalId}"
-                }
-            }
-        }
-
-        stage('Grant IAM User Permissions') {
-            steps {
-                script {
+                    
                     def policyDocument = '''
                         {
                             "Version": "2012-10-17",
@@ -144,12 +138,12 @@ pipeline {
                                     "Sid": "",
                                     "Effect": "Allow",
                                     "Principal": {
-                                        "AWS": "<snowflake_user_arn>"
+                                        "AWS": "${storageAwsIamUserArn}"
                                     },
                                     "Action": "sts:AssumeRole",
                                     "Condition": {
                                         "StringEquals": {
-                                            "sts:ExternalId": "<snowflake_external_id>"
+                                            "sts:ExternalId": "${storageAwsExternalId}"
                                         }
                                     }
                                 }
