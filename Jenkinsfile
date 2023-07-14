@@ -6,6 +6,8 @@ pipeline {
             steps {
                 script {
                     def bucket = "snowflake-input12"
+                    def policyFilePath = "/home/ec2-user/policy.json"
+
                     def policyDocument = '''
                     {
                         "Version": "2012-10-17",
@@ -35,10 +37,11 @@ pipeline {
                     }
                     '''
 
+                    writeFile file: policyFilePath, text: policyDocument
+
                     withAWS(credentials: 'aws_credentials') {
                         sh """
-                            echo '${policyDocument}' > policy.json
-                            aws s3api put-bucket-policy --bucket ${bucket} --policy file://policy.json
+                            aws s3api put-bucket-policy --bucket ${bucket} --policy file://${policyFilePath}
                         """
                     }
                 }
