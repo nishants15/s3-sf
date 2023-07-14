@@ -39,7 +39,9 @@ pipeline {
                         }
                     '''
 
-                    def bucketARN = "arn:aws:s3:::<bucket>"
+                    // Update the bucket variable with the correct bucket name
+                    def bucket = "<bucket>"
+                    def bucketARN = "arn:aws:s3:::${bucket}"
                     def folderPrefix = "<prefix>"
 
                     withAWS(credentials: 'aws_credentials') {
