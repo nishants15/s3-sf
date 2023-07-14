@@ -18,7 +18,7 @@ pipeline {
                                         "s3:DeleteObject",
                                         "s3:DeleteObjectVersion"
                                     ],
-                                    "Resource": "arn:aws:s3:::snowflake-input12"
+                                    "Resource": "arn:aws:s3:::snowflake-input12/*"
                                 },
                                 {
                                     "Effect": "Allow",
@@ -36,7 +36,7 @@ pipeline {
 
                     withAWS(credentials: 'aws_credentials') {
                         sh """
-                            aws s3api put-bucket-policy --bucket ${bucket} --policy '${policyDocument}'
+                            aws s3api put-bucket-policy --bucket snowflake-input12 --policy file://policy.json
                         """
                     }
                 }
