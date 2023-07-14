@@ -1,7 +1,7 @@
 pipeline {
     agent any
 
-    stages {
+       stages {
         stage('Add Policy Document') {
             steps {
                 script {
@@ -33,11 +33,10 @@ pipeline {
                     '''
 
                     def bucket = "snowflake-input12"
-                    def bucketARN = "arn:aws:s3:::${bucket}"
 
                     withAWS(credentials: 'aws_credentials') {
                         sh """
-                            aws s3api put-bucket-policy --bucket ${bucketARN} --policy '${policyDocument}'
+                            aws s3api put-bucket-policy --bucket ${bucket} --policy '${policyDocument}'
                         """
                     }
                 }
