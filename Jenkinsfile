@@ -18,7 +18,7 @@ pipeline {
                                         "s3:DeleteObject",
                                         "s3:DeleteObjectVersion"
                                     ],
-                                    "Resource": "arn:aws:s3:::snowflake-input12"
+                                    "Resource": "arn:aws:s3:::snowflake-input12/*"
                                 },
                                 {
                                     "Effect": "Allow",
