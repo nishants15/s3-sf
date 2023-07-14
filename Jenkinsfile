@@ -1,7 +1,7 @@
 pipeline {
     agent any
 
-   stages {
+    stages {
         stage('Add Policy Document') {
             steps {
                 script {
@@ -18,7 +18,7 @@ pipeline {
                                         "s3:DeleteObject",
                                         "s3:DeleteObjectVersion"
                                     ],
-                                    "Resource": "arn:aws:s3:::snowflake-input12/*"
+                                    "Resource": "arn:aws:s3:::snowflake-input12"
                                 },
                                 {
                                     "Effect": "Allow",
@@ -33,10 +33,14 @@ pipeline {
                     '''
 
                     def bucket = "snowflake-input12"
+                    def policyFile = "policy.json"
+
+                    // Save the policy document to a file
+                    writeFile file: policyFile, text: policyDocument
 
                     withAWS(credentials: 'aws_credentials') {
                         sh """
-                            aws s3api put-bucket-policy --bucket ${bucket} --policy '${policyDocument}'
+                            aws s3api put-bucket-policy --bucket ${bucket} --policy file://${policyFile}
                         """
                     }
                 }
