@@ -26,30 +26,18 @@ pipeline {
                                         "s3:ListBucket",
                                         "s3:GetBucketLocation"
                                     ],
-                                    "Resource": "arn:aws:s3:::<bucket>",
-                                    "Condition": {
-                                        "StringLike": {
-                                            "s3:prefix": [
-                                                "<prefix>/*"
-                                            ]
-                                        }
-                                    }
+                                    "Resource": "arn:aws:s3:::snowflake-input12"
                                 }
                             ]
                         }
                     '''
 
-                    // Update the bucket variable with the correct bucket name
-                    def bucket = "<bucket>"
+                    def bucket = "snowflake-input12"
                     def bucketARN = "arn:aws:s3:::${bucket}"
-                    def folderPrefix = "<prefix>"
 
                     withAWS(credentials: 'aws_credentials') {
                         sh """
                             aws s3api put-bucket-policy --bucket ${bucketARN} --policy '${policyDocument}'
-                        """
-                        sh """
-                            aws s3api put-bucket-tagging --bucket ${bucketARN} --tagging 'TagSet=[{Key=FolderPrefix,Value=${folderPrefix}}]'
                         """
                     }
                 }
