@@ -6,11 +6,37 @@ pipeline {
             steps {
                 script {
                     def bucket = "snowflake-input12"
-                    def policyFile = "policy.json"
+                    def policyDocument = '''
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "s3:PutObject",
+                                    "s3:GetObject",
+                                    "s3:GetObjectVersion",
+                                    "s3:DeleteObject",
+                                    "s3:DeleteObjectVersion"
+                                ],
+                                "Resource": "arn:aws:s3:::snowflake-input12"
+                            },
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "s3:ListBucket",
+                                    "s3:GetBucketLocation"
+                                ],
+                                "Resource": "arn:aws:s3:::snowflake-input12"
+                            }
+                        ]
+                    }
+                    '''
 
                     withAWS(credentials: 'aws_credentials') {
                         sh """
-                            aws s3api put-bucket-policy --bucket ${bucket} --policy file://${policyFile}
+                            echo '${policyDocument}' > policy.json
+                            aws s3api put-bucket-policy --bucket ${bucket} --policy file://policy.json
                         """
                     }
                 }
