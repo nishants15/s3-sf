@@ -6,15 +6,14 @@ pipeline {
             steps {
                 script {
                     def bucket = "snowflake-input12"
-                    def policyFilePath = "/home/ec2-user/policy.json"
+                    def policyFilePath = "/home/ec2-user/custom-policy.json"
 
                     def policyDocument = '''
-                    {
+                                    {
                         "Version": "2012-10-17",
                         "Statement": [
                             {
                                 "Effect": "Allow",
-                                "Principal": "*",
                                 "Action": [
                                     "s3:PutObject",
                                     "s3:GetObject",
@@ -22,16 +21,22 @@ pipeline {
                                     "s3:DeleteObject",
                                     "s3:DeleteObjectVersion"
                                 ],
-                                "Resource": "arn:aws:s3:::snowflake-input12/*"
+                                "Resource": "arn:aws:s3:::snowflake-input12*"
                             },
                             {
                                 "Effect": "Allow",
-                                "Principal": "*",
                                 "Action": [
                                     "s3:ListBucket",
                                     "s3:GetBucketLocation"
                                 ],
-                                "Resource": "arn:aws:s3:::snowflake-input12"
+                                "Resource": "arn:aws:s3:::snowflake-input12",
+                                "Condition": {
+                                    "StringLike": {
+                                        "s3:prefix": [
+                                            "<prefix>/*"
+                                        ]
+                                    }
+                                }
                             }
                         ]
                     }
@@ -41,7 +46,8 @@ pipeline {
 
                     withAWS(credentials: 'aws_credentials') {
                         sh """
-                            aws s3api put-bucket-policy --bucket ${bucket} --policy file://${policyFilePath}
+                            aws iam create-policy --policy-name CustomS3Policy --policy-document file://custom-policy.json
+
                         """
                     }
                 }
