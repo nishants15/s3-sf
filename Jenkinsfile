@@ -3,7 +3,7 @@ pipeline {
 
      stages {
         stage('Add Policy Document') {
-            withAWS(credentials: 'aws_credentials') {
+            
             steps {
                 script {
                     def bucket = "snowflake-input12"
@@ -43,7 +43,7 @@ pipeline {
                         }
                     '''
                         
-                        
+                        withAWS(credentials: 'aws_credentials') {
                         // Save the policy document to a file named custom-policy.json
                         sh "cat <<EOF > ${policyFilePath}\n${policyDocument}\nEOF"
 
