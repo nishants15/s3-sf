@@ -6,7 +6,6 @@ pipeline {
             steps {
                 script {
                     def bucket = "snowflake-input12"
-                    def policyFilePath = "/home/ec2-user/custom-policy.json"
 
                     def policyDocument = '''
                                     {
