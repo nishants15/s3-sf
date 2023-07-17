@@ -3,6 +3,7 @@ pipeline {
 
      stages {
         stage('Add Policy Document') {
+            withAWS(credentials: 'aws_credentials') {
             steps {
                 script {
                     def bucket = "snowflake-input12"
@@ -41,12 +42,14 @@ pipeline {
                             ]
                         }
                     '''
-                    
-                    // Save the policy document to a file named custom-policy.json
-                    sh "cat <<EOF > ${policyFilePath}\n${policyDocument}\nEOF"
+                        
+                        
+                        // Save the policy document to a file named custom-policy.json
+                        sh "cat <<EOF > ${policyFilePath}\n${policyDocument}\nEOF"
 
-                    // Create the IAM policy using AWS CLI
-                    sh "aws iam create-policy --policy-name CustomS3Policy --policy-document file://${policyFilePath}"
+                        // Create the IAM policy using AWS CLI
+                        sh "aws iam create-policy --policy-name CustomS3Policy --policy-document file://${policyFilePath}"
+                    }
                 }
             }
         }
