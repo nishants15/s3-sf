@@ -50,7 +50,7 @@ pipeline {
                         sh "cat <<EOF > ${policyFilePath}\n${policyDocument}\nEOF"
 
                         // Create the IAM policy using AWS CLI
-                        sh "aws iam create-policy --policy-name CustomS3Policy --policy-document file://${policyFilePath}"
+                        sh "aws iam create-policy --policy-name CustomS3Policy --policy-document file://custom-policy.json"
                     }
                 }
             }
