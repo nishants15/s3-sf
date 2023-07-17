@@ -2,57 +2,59 @@ pipeline {
     agent any
 
      stages {
-        stage('Add Policy Document') {
-            
-            steps {
-                script {
-                    def bucket = "snowflake-input12"
-                    def policyFilePath = "custom-policy.json"
+       stage('Add Policy Document') {
+        steps {
+            script {
+                def bucket = "snowflake-input12"
+                def policyFilePath = "custom-policy.json"
 
-                    def policyDocument = '''
-                        {
-                            "Version": "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "s3:PutObject",
-                                        "s3:GetObject",
-                                        "s3:GetObjectVersion",
-                                        "s3:DeleteObject",
-                                        "s3:DeleteObjectVersion"
-                                    ],
-                                    "Resource": "arn:aws:s3:::snowflake-input12*"
-                                },
-                                {
-                                    "Effect": "Allow",
-                                    "Action": [
-                                        "s3:ListBucket",
-                                        "s3:GetBucketLocation"
-                                    ],
-                                    "Resource": "arn:aws:s3:::snowflake-input12",
-                                    "Condition": {
-                                        "StringLike": {
-                                            "s3:prefix": [
-                                                "<prefix>/*"
-                                            ]
-                                        }
+                def policyDocument = '''
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "s3:PutObject",
+                                    "s3:GetObject",
+                                    "s3:GetObjectVersion",
+                                    "s3:DeleteObject",
+                                    "s3:DeleteObjectVersion"
+                                ],
+                                "Resource": "arn:aws:s3:::snowflake-input12*"
+                            },
+                            {
+                                "Effect": "Allow",
+                                "Action": [
+                                    "s3:ListBucket",
+                                    "s3:GetBucketLocation"
+                                ],
+                                "Resource": "arn:aws:s3:::snowflake-input12",
+                                "Condition": {
+                                    "StringLike": {
+                                        "s3:prefix": [
+                                            "<prefix>/*"
+                                        ]
                                     }
                                 }
-                            ]
-                        }
-                    '''
-                        
-                        withAWS(credentials: 'aws_credentials') {
-                        // Save the policy document to a file named custom-policy.json
-                        sh "cat <<EOF > ${policyFilePath}\n${policyDocument}\nEOF"
-
-                        // Create the IAM policy using AWS CLI
-                        sh "aws iam create-policy --policy-name CustomS3Policy --policy-document file://${policyFilePath}"
+                            }
+                        ]
                     }
-                }
+                '''
+
+                // Print the policy document to verify its content
+                echo "Policy Document Content:"
+                echo policyDocument
+
+                // Save the policy document to a file named custom-policy.json
+                sh "cat <<EOF > ${policyFilePath}\n${policyDocument}\nEOF"
+
+                // Create the IAM policy using AWS CLI
+                sh "aws iam create-policy --policy-name CustomS3Policy --policy-document file://${policyFilePath}"
             }
         }
+    }
+
 
         stage('Create IAM Role') {
             steps {
