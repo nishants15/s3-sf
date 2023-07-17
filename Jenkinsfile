@@ -41,21 +41,21 @@ pipeline {
                         ]
                     }
                 '''
+                        withAWS(credentials: 'aws_credentials') {
+                        // Print the policy document to verify its content
+                        echo "Policy Document Content:"
+                        echo policyDocument
 
-                // Print the policy document to verify its content
-                echo "Policy Document Content:"
-                echo policyDocument
+                        // Save the policy document to a file named custom-policy.json
+                        sh "cat <<EOF > ${policyFilePath}\n${policyDocument}\nEOF"
 
-                // Save the policy document to a file named custom-policy.json
-                sh "cat <<EOF > ${policyFilePath}\n${policyDocument}\nEOF"
-
-                // Create the IAM policy using AWS CLI
-                sh "aws iam create-policy --policy-name CustomS3Policy --policy-document file://${policyFilePath}"
+                        // Create the IAM policy using AWS CLI
+                        sh "aws iam create-policy --policy-name CustomS3Policy --policy-document file://${policyFilePath}"
+                    }
+                }
             }
         }
-    }
-
-
+    
         stage('Create IAM Role') {
             steps {
                 script {
