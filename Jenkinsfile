@@ -7,12 +7,14 @@ pipeline {
                 script {
                     def bucketName = "snowflake-input12"
                     def folderPrefix = "snow"
+                    def policyName = "SnowflakePolicy" // Name for the bucket policy
 
                     def policy = '''
                     {
                         "Version": "2012-10-17",
                         "Statement": [
                             {
+                                "Sid": "${policyName}", // Add policy name here
                                 "Effect": "Allow",
                                 "Action": [
                                     "s3:PutObject",
@@ -24,6 +26,7 @@ pipeline {
                                 "Resource": "arn:aws:s3:::snowflake-input12"
                             },
                             {
+                                "Sid": "${policyName}", // Add policy name here
                                 "Effect": "Allow",
                                 "Action": [
                                     "s3:ListBucket",
@@ -48,6 +51,7 @@ pipeline {
                 }
             }
         }
+
 
 
         stage('Step 2: Create IAM Role in AWS') {
