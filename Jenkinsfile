@@ -9,7 +9,7 @@ pipeline {
                     def folderPrefix = "snow"
                     def accountId = "988231236474"
 
-                    def policy = '''
+                    def policy = """
                     {
                         "Version": "2012-10-17",
                         "Statement": [
@@ -41,7 +41,7 @@ pipeline {
                             }
                         ]
                     }
-                    '''
+                    """
 
                     withAWS(credentials: 'aws_credentials') {
                         sh "aws s3api put-bucket-policy --bucket ${bucketName} --policy '${policy}'"
@@ -56,7 +56,7 @@ pipeline {
                     def accountId = "988231236474"
                     def externalId = "0000"
 
-                    def trustPolicy = '''
+                    def trustPolicy = """
                     {
                         "Version": "2012-10-17",
                         "Statement": [
@@ -75,7 +75,7 @@ pipeline {
                             }
                         ]
                     }
-                    '''
+                    """
 
                     withAWS(credentials: 'aws_credentials') {
                         // Create the IAM role with the trust policy
