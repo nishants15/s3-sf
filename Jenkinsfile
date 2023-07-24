@@ -1,96 +1,45 @@
 pipeline {
     agent any
 
-     stages {
-       stage('Add Policy Document') {
-        steps {
-            script {
-                def bucket = "snowflake-input12"
-                def policyFilePath = "custom-policy.json"
+    environment {
+        AWS_ACCOUNT_ID = "988231236474" // Replace with your AWS Account ID
+        EXTERNAL_ID = "0000" // Replace with your Snowflake External ID
+        S3_BUCKET_NAME = "snowflake-input12"
+        SNOWFLAKE_ROLE_ARN = "arn:aws:iam::${AWS_ACCOUNT_ID}:role/snowflake-role"
+        SNOWFLAKE_INTEGRATION_NAME = "s3_integration"
+    }
 
-                def policyDocument = '''
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Action": [
-                                    "s3:PutObject",
-                                    "s3:GetObject",
-                                    "s3:GetObjectVersion",
-                                    "s3:DeleteObject",
-                                    "s3:DeleteObjectVersion"
-                                ],
-                                "Resource": "arn:aws:s3:::snowflake-input12*"
-                            },
-                            {
-                                "Effect": "Allow",
-                                "Action": [
-                                    "s3:ListBucket",
-                                    "s3:GetBucketLocation"
-                                ],
-                                "Resource": "arn:aws:s3:::snowflake-input12",
-                                "Condition": {
-                                    "StringLike": {
-                                        "s3:prefix": [
-                                            "<prefix>/*"
-                                        ]
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                '''
-                        withAWS(credentials: 'aws_credentials') {
-                        // Print the policy document to verify its content
-                        echo "Policy Document Content:"
-                        echo policyDocument
-
-                        // Save the policy document to a file named custom-policy.json
-                        sh "cat <<EOF > ${policyFilePath}\n${policyDocument}\nEOF"
-
-                        // Create the IAM policy using AWS CLI
-                        sh "aws iam create-policy --policy-name CustomS3Policy --policy-document file://custom-policy.json"
-                    }
-                }
-            }
-        }
-    
-        stage('Create IAM Role') {
+    stages {
+        stage('Set Up IAM Role') {
             steps {
                 script {
-                    def awsAccountId = "988231236474"
-                    def dummyExternalId = "00000"
-
-                    def roleName = "snowflake-role"
-
-                    def trustPolicyDocument = '''
+                    def trustPolicy = '''
+                    {
+                      "Version": "2012-10-17",
+                      "Statement": [
                         {
-                            "Version": "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Effect": "Allow",
-                                    "Principal": {
-                                        "AWS": "arn:aws:iam::${awsAccountId}:root"
-                                    },
-                                    "Action": "sts:AssumeRole",
-                                    "Condition": {
-                                        "StringEquals": {
-                                            "sts:ExternalId": "${dummyExternalId}"
-                                        }
-                                    }
-                                }
-                            ]
+                          "Sid": "",
+                          "Effect": "Allow",
+                          "Principal": {
+                            "AWS": "${env.STORAGE_AWS_IAM_USER_ARN}"
+                          },
+                          "Action": "sts:AssumeRole",
+                          "Condition": {
+                            "StringEquals": {
+                              "sts:ExternalId": "${env.SNOWFLAKE_EXTERNAL_ID}"
+                            }
+                          }
                         }
+                      ]
+                    }
                     '''
-
                     withAWS(credentials: 'aws_credentials') {
-                        sh """
-                            aws iam create-role --role-name ${roleName} --assume-role-policy-document '${trustPolicyDocument}' --tags Key=SnowflakeIntegration,Value=true
-                        """
-                        sh """
-                            aws iam attach-role-policy --role-name ${roleName} --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess
-                        """
+                        def iamRoleName = 'snowflake-iam-role'
+                        def iamRoleArn = sh(script: 'aws iam create-role --role-name ' + iamRoleName + ' --assume-role-policy-document \'' + trustPolicy + '\'', returnStdout: true).trim()
+                        sh(script: 'aws iam attach-role-policy --role-name ' + iamRoleName + ' --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess') // Assuming Snowflake needs full access to S3
+                        sh(script: 'aws iam create-instance-profile --instance-profile-name ' + iamRoleName)
+                        sh(script: 'aws iam add-role-to-instance-profile --instance-profile-name ' + iamRoleName + ' --role-name ' + iamRoleName)
+                        env.IAM_ROLE_ARN = iamRoleArn
                     }
                 }
             }
@@ -99,77 +48,57 @@ pipeline {
         stage('Create Snowflake Storage Integration') {
             steps {
                 script {
-                    def integrationQuery = '''
-                        sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integration s3_integration
+                    withAWS(credentials: 'aws_credentials') {
+                        sh '''
+                        sudo -u ec2-user snowsql -c my_connection -q "create or replace storage integration ${env.SNOWFLAKE_INTEGRATION_NAME}
                             TYPE = EXTERNAL_STAGE
                             STORAGE_PROVIDER = S3
                             ENABLED = TRUE 
-                            STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::<aws_account_id>:role/snowflake-role'
-                            STORAGE_ALLOWED_LOCATIONS = ('s3://snowflake-input12')"
-                    '''
-
-                    withAWS(credentials: 'aws_credentials') {
-                        sh """
-                            ${integrationQuery.replace('<aws_account_id>', '988231236474')}
-                        """
+                            STORAGE_AWS_ROLE_ARN = '${env.IAM_ROLE_ARN}'
+                            STORAGE_ALLOWED_LOCATIONS = ('s3://${env.S3_BUCKET_NAME}')"
+                        '''
                     }
                 }
             }
         }
 
-        stage('Retrieve AWS IAM User') {
+        stage('Retrieve AWS IAM User and External ID') {
             steps {
                 script {
-                    def integrationName = "s3_integration"
-
-                    def integrationDescriptionQuery = '''
-                        DESCRIBE INTEGRATION ''' + integrationName + ''';
-                    '''
-
-                    def integrationDescriptionOutput = sh(
-                        script: "sudo -u ec2-user snowsql -c my_connection -q '${integrationDescriptionQuery}'",
-                        returnStdout: true
-                    ).trim()
-
-                    // Parse the output to extract STORAGE_AWS_IAM_USER_ARN and STORAGE_AWS_EXTERNAL_ID
-                    def userArn = integrationDescriptionOutput =~ /STORAGE_AWS_IAM_USER_ARN\s*\|\s*(.*?)\s*\|/
-                    def externalId = integrationDescriptionOutput =~ /STORAGE_AWS_EXTERNAL_ID\s*\|\s*(.*?)\s*\|/
-
-                    // Get the matched values
-                    def storageAwsIamUserArn = userArn ? userArn[0][1] : null
-                    def storageAwsExternalId = externalId ? externalId[0][1] : null
-
-                    // Use the extracted values for further steps
-                    echo "Storage AWS IAM User ARN: ${storageAwsIamUserArn}"
-                    echo "Storage AWS External ID: ${storageAwsExternalId}"
-                    
-                    def policyDocument = '''
-                        {
-                            "Version": "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Sid": "",
-                                    "Effect": "Allow",
-                                    "Principal": {
-                                        "AWS": "${storageAwsIamUserArn}"
-                                    },
-                                    "Action": "sts:AssumeRole",
-                                    "Condition": {
-                                        "StringEquals": {
-                                            "sts:ExternalId": "${storageAwsExternalId}"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    '''
-
-                    // Update the IAM role trust relationship with the policy document
-                    def roleName = "snowflake-role"
                     withAWS(credentials: 'aws_credentials') {
-                        sh """
-                            aws iam update-assume-role-policy --role-name ${roleName} --policy-document '${policyDocument}'
-                        """
+                        def integrationInfo = sh(script: "sudo -u ec2-user snowsql -c my_connection -q 'DESC INTEGRATION ${env.SNOWFLAKE_INTEGRATION_NAME};'", returnStdout: true)
+                        env.SNOWFLAKE_USER_ARN = integrationInfo =~ /STORAGE_AWS_IAM_USER_ARN\s*\|\s*String\s*\|\s*([^|]+)/ ? ~/arn:aws:iam::\d+:user\/.*/.matcher(~/\s*([^|]+)\s*/.matcher(integrationInfo[0][0]).replaceAll('$1')).replaceAll('$1') : null
+                        env.SNOWFLAKE_EXTERNAL_ID = integrationInfo =~ /STORAGE_AWS_EXTERNAL_ID\s*\|\s*String\s*\|\s*([^|]+)/ ? ~/([^|]+)/.matcher(~/\s*([^|]+)\s*/.matcher(integrationInfo[0][0]).replaceAll('$1')).replaceAll('$1') : null
+                    }
+                }
+            }
+        }
+
+        stage('Grant IAM User Permissions to Access Bucket Objects') {
+            steps {
+                script {
+                    withAWS(credentials: 'aws_credentials') {
+                        def policyDocument = '''
+                        {
+                          "Version": "2012-10-17",
+                          "Statement": [
+                            {
+                              "Sid": "",
+                              "Effect": "Allow",
+                              "Principal": {
+                                "AWS": "${env.SNOWFLAKE_USER_ARN}"
+                              },
+                              "Action": "sts:AssumeRole",
+                              "Condition": {
+                                "StringEquals": {
+                                  "sts:ExternalId": "${env.SNOWFLAKE_EXTERNAL_ID}"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                        '''
+                        sh(script: 'aws iam update-assume-role-policy --role-name snowflake-iam-role --policy-document \'' + policyDocument + '\'', returnStdout: true)
                     }
                 }
             }
