@@ -11,9 +11,9 @@ pipeline {
 
     stages {
         stage('Set Up IAM Role') {
-            steps {
-                script {
-                    def trustPolicy = '''
+    steps {
+        script {
+            def trustPolicy = '''
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -33,17 +33,32 @@ pipeline {
   ]
 }
 '''
-                    withAWS(credentials: 'aws_credentials') {
-                        def iamRoleName = 'snowflake-iam-role'
-                        def iamRoleArn = sh(script: 'aws iam create-role --role-name ' + iamRoleName + ' --assume-role-policy-document \'' + trustPolicy + '\'', returnStdout: true).trim()
-                        sh(script: 'aws iam attach-role-policy --role-name ' + iamRoleName + ' --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess') // Assuming Snowflake needs full access to S3
-                        sh(script: 'aws iam create-instance-profile --instance-profile-name ' + iamRoleName)
-                        sh(script: 'aws iam add-role-to-instance-profile --instance-profile-name ' + iamRoleName + ' --role-name ' + iamRoleName)
-                        env.IAM_ROLE_ARN = iamRoleArn
-                    }
-                }
-            }
+
+            def roleName = 'snowflake-iam-role'
+
+            // Create the IAM role
+            sh(script: 'aws iam create-role --role-name ' + roleName + ' --assume-role-policy-document \'' + trustPolicy + '\'', returnStatus: true)
+
+            // Attach the AmazonS3FullAccess policy to the role
+            sh(script: 'aws iam attach-role-policy --role-name ' + roleName + ' --policy-arn arn:aws:iam::aws:policy/AmazonS3FullAccess', returnStatus: true)
+
+            // Create the instance profile
+            sh(script: 'aws iam create-instance-profile --instance-profile-name ' + roleName, returnStatus: true)
+
+            // Add the role to the instance profile
+            sh(script: 'aws iam add-role-to-instance-profile --instance-profile-name ' + roleName + ' --role-name ' + roleName, returnStatus: true)
+
+            // Wait for IAM changes to propagate
+            sleep(10) // Adjust the sleep time as needed
+
+            // Get the IAM role ARN
+            def iamRoleArn = sh(script: 'aws iam get-role --role-name ' + roleName + ' --query "Role.Arn" --output text', returnStdout: true).trim()
+
+            env.IAM_ROLE_ARN = iamRoleArn
         }
+    }
+}
+
 
         stage('Create Snowflake Storage Integration') {
             steps {
