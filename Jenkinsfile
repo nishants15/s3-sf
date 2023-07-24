@@ -7,9 +7,8 @@ pipeline {
                 script {
                     def bucketName = "snowflake-input12"
                     def folderPrefix = "snow"
-                    def accountId = "988231236474"
 
-                    def policy = """
+                    def policy = '''
                     {
                         "Version": "2012-10-17",
                         "Statement": [
@@ -22,7 +21,7 @@ pipeline {
                                     "s3:DeleteObject",
                                     "s3:DeleteObjectVersion"
                                 ],
-                                "Resource": "arn:aws:s3:::${bucketName}"
+                                "Resource": "arn:aws:s3:::snowflake-input12"
                             },
                             {
                                 "Effect": "Allow",
@@ -30,25 +29,26 @@ pipeline {
                                     "s3:ListBucket",
                                     "s3:GetBucketLocation"
                                 ],
-                                "Resource": "arn:aws:s3:::${bucketName}",
+                                "Resource": "arn:aws:s3:::snowflake-input12",
                                 "Condition": {
                                     "StringLike": {
                                         "s3:prefix": [
-                                            "${folderPrefix}/*"
+                                            "snow/*"
                                         ]
                                     }
                                 }
                             }
                         ]
                     }
-                    """
+                    '''
 
                     withAWS(credentials: 'aws_credentials') {
-                        sh "aws s3api put-bucket-policy --bucket ${bucketName} --policy '${policy}'"
+                        sh "aws s3api put-bucket-policy --bucket ${bucketName} --policy '''${policy}'''"
                     }
                 }
             }
         }
+
 
         stage('Step 2: Create IAM Role in AWS') {
             steps {
@@ -56,7 +56,7 @@ pipeline {
                     def accountId = "988231236474"
                     def externalId = "0000"
 
-                    def trustPolicy = """
+                    def trustPolicy = '''
                     {
                         "Version": "2012-10-17",
                         "Statement": [
@@ -75,7 +75,7 @@ pipeline {
                             }
                         ]
                     }
-                    """
+                    '''
 
                     withAWS(credentials: 'aws_credentials') {
                         // Create the IAM role with the trust policy
