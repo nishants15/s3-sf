@@ -7,14 +7,12 @@ pipeline {
                 script {
                     def bucketName = "snowflake-input12"
                     def folderPrefix = "snow"
-                    def policyName = "SnowflakePolicy" // Name for the bucket policy
 
                     def policy = '''
                     {
                         "Version": "2012-10-17",
                         "Statement": [
                             {
-                                "Sid": "${policyName}", // Add policy name here
                                 "Effect": "Allow",
                                 "Action": [
                                     "s3:PutObject",
@@ -23,36 +21,21 @@ pipeline {
                                     "s3:DeleteObject",
                                     "s3:DeleteObjectVersion"
                                 ],
-                                "Resource": "arn:aws:s3:::snowflake-input12"
-                            },
-                            {
-                                "Sid": "${policyName}", // Add policy name here
-                                "Effect": "Allow",
-                                "Action": [
-                                    "s3:ListBucket",
-                                    "s3:GetBucketLocation"
-                                ],
-                                "Resource": "arn:aws:s3:::snowflake-input12",
-                                "Condition": {
-                                    "StringLike": {
-                                        "s3:prefix": [
-                                            "snow/*"
-                                        ]
-                                    }
-                                }
+                                "Principal": "*",
+                                "Resource": "arn:aws:s3:::snowflake-input12/*"
                             }
                         ]
                     }
                     '''
 
+                    def policyJsonBase64 = policy.bytes.encodeBase64().toString()
+
                     withAWS(credentials: 'aws_credentials') {
-                        sh "aws s3api put-bucket-policy --bucket ${bucketName} --policy '''${policy}'''"
+                        sh "aws s3api put-bucket-acl --bucket ${bucketName} --acl bucket-owner-full-control --access-control-policy 'file://<(echo ${policyJsonBase64} | base64 --decode)'"
                     }
                 }
             }
         }
-
-
 
         stage('Step 2: Create IAM Role in AWS') {
             steps {
