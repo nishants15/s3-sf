@@ -14,25 +14,25 @@ pipeline {
             steps {
                 script {
                     def trustPolicy = '''
-                    {
-                      "Version": "2012-10-17",
-                      "Statement": [
-                        {
-                          "Sid": "",
-                          "Effect": "Allow",
-                          "Principal": {
-                            "AWS": "${env.STORAGE_AWS_IAM_USER_ARN}"
-                          },
-                          "Action": "sts:AssumeRole",
-                          "Condition": {
-                            "StringEquals": {
-                              "sts:ExternalId": "${env.SNOWFLAKE_EXTERNAL_ID}"
-                            }
-                          }
-                        }
-                      ]
-                    }
-                    '''
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "${env.STORAGE_AWS_IAM_USER_ARN}"
+      },
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "StringEquals": {
+          "sts:ExternalId": "${env.SNOWFLAKE_EXTERNAL_ID}"
+        }
+      }
+    }
+  ]
+}
+'''
                     withAWS(credentials: 'aws_credentials') {
                         def iamRoleName = 'snowflake-iam-role'
                         def iamRoleArn = sh(script: 'aws iam create-role --role-name ' + iamRoleName + ' --assume-role-policy-document \'' + trustPolicy + '\'', returnStdout: true).trim()
@@ -79,25 +79,25 @@ pipeline {
                 script {
                     withAWS(credentials: 'aws_credentials') {
                         def policyDocument = '''
-                        {
-                          "Version": "2012-10-17",
-                          "Statement": [
-                            {
-                              "Sid": "",
-                              "Effect": "Allow",
-                              "Principal": {
-                                "AWS": "${env.SNOWFLAKE_USER_ARN}"
-                              },
-                              "Action": "sts:AssumeRole",
-                              "Condition": {
-                                "StringEquals": {
-                                  "sts:ExternalId": "${env.SNOWFLAKE_EXTERNAL_ID}"
-                                }
-                              }
-                            }
-                          ]
-                        }
-                        '''
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "${env.SNOWFLAKE_USER_ARN}"
+      },
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "StringEquals": {
+          "sts:ExternalId": "${env.SNOWFLAKE_EXTERNAL_ID}"
+        }
+      }
+    }
+  ]
+}
+'''
                         sh(script: 'aws iam update-assume-role-policy --role-name snowflake-iam-role --policy-document \'' + policyDocument + '\'', returnStdout: true)
                     }
                 }
