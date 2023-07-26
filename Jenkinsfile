@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    environment {
+        STORAGE_AWS_IAM_USER_ARN = ""  // Declare the variable here
+        STORAGE_AWS_EXTERNAL_ID = ""   // Declare the variable here
+    }
+
     stages {
         stage('Create IAM Role') {
             steps {
@@ -37,24 +42,30 @@ pipeline {
             steps {
                 script {
                     withAWS(credentials: 'aws_credentials') {
-                        def storageIAMUserArn = ""
-                        def storageExternalId = ""
-                        
                         def integrationOutput = sh(
-                            script: "sudo -u ec2-user snowsql -c my_connection -q 'DESC INTEGRATION s3_integration;' | grep -E 'STORAGE_AWS_IAM_USER_ARN|STORAGE_AWS_EXTERNAL_ID'",
+                            script: "sudo -u ec2-user snowsql -c my_connection -q 'DESC INTEGRATION s3_integration;'",
                             returnStdout: true
                         )
 
-                        integrationOutput.split("\n").each { line ->
-                            if (line.contains("STORAGE_AWS_IAM_USER_ARN")) {
-                                storageIAMUserArn = line.split("\\|")[2].trim()
-                            } else if (line.contains("STORAGE_AWS_EXTERNAL_ID")) {
-                                storageExternalId = line.split("\\|")[2].trim()
-                            }
+                        echo "Integration Output: ${integrationOutput}"
+
+                        def arnMatcher = integrationOutput =~ /STORAGE_AWS_IAM_USER_ARN\s+\|\s+(\S+)/
+                        if (arnMatcher) {
+                            STORAGE_AWS_IAM_USER_ARN = arnMatcher[0][1]
+                        } else {
+                            echo "Failed to find STORAGE_AWS_IAM_USER_ARN"
                         }
 
-                        echo "Storage IAM User ARN: ${storageIAMUserArn}"
-                        echo "Storage External ID: ${storageExternalId}"
+                        def idMatcher = integrationOutput =~ /STORAGE_AWS_EXTERNAL_ID\s+\|\s+(\S+)/
+                        if (idMatcher) {
+                            STORAGE_AWS_EXTERNAL_ID = idMatcher[0][1]
+                        } else {
+                            echo "Failed to find STORAGE_AWS_EXTERNAL_ID"
+                        }
+
+                        echo "Storage IAM User ARN: ${STORAGE_AWS_IAM_USER_ARN}"
+                        echo "Storage External ID: ${STORAGE_AWS_EXTERNAL_ID}"
+
                     }
                 }
             }
@@ -72,12 +83,12 @@ pipeline {
                                     \"Sid\": \"\",
                                     \"Effect\": \"Allow\",
                                     \"Principal\": {
-                                        \"AWS\": \"${storageIAMUserArn}\"
+                                        \"AWS\": \"${STORAGE_AWS_IAM_USER_ARN}\"
                                     },
                                     \"Action\": \"sts:AssumeRole\",
                                     \"Condition\": {
                                         \"StringEquals\": {
-                                            \"sts:ExternalId\": \"${storageExternalId}\"
+                                            \"sts:ExternalId\": \"${STORAGE_AWS_EXTERNAL_ID}\"
                                         }
                                     }
                                 }
