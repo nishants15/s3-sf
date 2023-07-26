@@ -6,34 +6,11 @@ pipeline {
             steps {
                 script {
                     withAWS(credentials: 'aws_credentials') {
-                        def accountId = "988231236474"
-                        def externalId = "0000"
-                        def snowflakeUserArn = "arn:aws:iam::123456789001:user/abc1-b-self1234"
-                        def snowflakeExternalId = "MYACCOUNT_SFCRole=2_a123456/s0aBCDEfGHIJklmNoPq="
-
-                        def trustPolicy = """{
-                            \"Version\": \"2012-10-17\",
-                            \"Statement\": [
-                                {
-                                    \"Sid\": \"\",
-                                    \"Effect\": \"Allow\",
-                                    \"Principal\": {
-                                        \"AWS\": \"${snowflakeUserArn}\"
-                                    },
-                                    \"Action\": \"sts:AssumeRole\",
-                                    \"Condition\": {
-                                        \"StringEquals\": {
-                                            \"sts:ExternalId\": \"${snowflakeExternalId}\"
-                                        }
-                                    }
-                                }
-                            ]
-                        }"""
-
                         def roleName = "snowflake-role"
 
-                        def role = createRole(roleName, trustPolicy)
-                        attachPolicyToRole(role, "snowpolicy")
+                        sh "aws iam create-role --role-name ${roleName} --assume-role-policy-document '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"ec2.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}'"
+
+                        attachPolicyToRole(roleName, "snowpolicy")
 
                         echo "IAM Role '${roleName}' with attached policy 'snowpolicy' created successfully."
                     }
@@ -121,8 +98,10 @@ def createRole(roleName, trustPolicy) {
     return roleArn
 }
 
-def attachPolicyToRole(roleArn, policyName) {
-    awsiamAttachRolePolicy(roleArn: roleArn, policyArn: "arn:aws:iam::988231236474:policy/${policyName}")
+def attachPolicyToRole(roleName, policyName) {
+    withAWS(credentials: 'aws_credentials') {
+        sh "aws iam attach-role-policy --role-name ${roleName} --policy-arn arn:aws:iam::988231236474:policy/${policyName}"
+    }
 }
 
 def updateTrustPolicyForRole(roleArn, trustPolicy) {
