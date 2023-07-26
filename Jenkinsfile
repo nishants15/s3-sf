@@ -108,6 +108,7 @@ pipeline {
             }
         }
     }
+}
 
 def createRole(roleName, trustPolicy) {
     def roleNameEncoded = roleName.replace(" ", "_").replaceAll("[^a-zA-Z0-9]", "")
