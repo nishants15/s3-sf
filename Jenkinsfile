@@ -1,4 +1,13 @@
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder
+import com.amazonaws.services.identitymanagement.model.GetRoleRequest
+
+def awsiamGetRole(String roleName) {
+    def iamClient = AmazonIdentityManagementClientBuilder.defaultClient()
+    def getRoleRequest = new GetRoleRequest().withRoleName(roleName)
+    def getRoleResult = iamClient.getRole(getRoleRequest)
+    return getRoleResult.getRole().getArn()
+}
+
 
 def awsiamGetRole(String roleName) {
     def iamClient = AmazonIdentityManagementClientBuilder.defaultClient()
