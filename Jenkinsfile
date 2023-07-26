@@ -37,13 +37,13 @@ pipeline {
             steps {
                 script {
                     withAWS(credentials: 'aws_credentials') {
+                        def storageIAMUserArn = ""
+                        def storageExternalId = ""
+                        
                         def integrationOutput = sh(
                             script: "sudo -u ec2-user snowsql -c my_connection -q 'DESC INTEGRATION s3_integration;' | grep -E 'STORAGE_AWS_IAM_USER_ARN|STORAGE_AWS_EXTERNAL_ID'",
                             returnStdout: true
                         )
-
-                        def storageIAMUserArn = ""
-                        def storageExternalId = ""
 
                         integrationOutput.split("\n").each { line ->
                             if (line.contains("STORAGE_AWS_IAM_USER_ARN")) {
