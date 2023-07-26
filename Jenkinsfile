@@ -1,14 +1,6 @@
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder
 import com.amazonaws.services.identitymanagement.model.GetRoleRequest
 
-def awsiamGetRole(String roleName) { // Explicitly define the type of roleName parameter as String
-    def iamClient = AmazonIdentityManagementClientBuilder.defaultClient()
-    def getRoleRequest = new GetRoleRequest().withRoleName(roleName)
-    def getRoleResult = iamClient.getRole(getRoleRequest)
-    return getRoleResult.getRole().getArn()
-}
-
-
 pipeline {
     agent any
 
@@ -116,17 +108,6 @@ pipeline {
             }
         }
     }
-}
-
-def createRole(roleName, trustPolicy) {
-    def roleNameEncoded = roleName.replace(" ", "_").replaceAll("[^a-zA-Z0-9]", "")
-
-    def roleArn = awsiamCreateRole(
-        roleName: roleNameEncoded,
-        assumeRolePolicyDocument: trustPolicy,
-    ).arn
-
-    return roleArn
 }
 
 def attachPolicyToRole(roleName, policyName) {
