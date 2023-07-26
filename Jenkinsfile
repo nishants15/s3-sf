@@ -42,8 +42,16 @@ pipeline {
                             returnStdout: true
                         )
 
-                        def storageIAMUserArn = integrationOutput.split("\n")[0].split("|")[2].trim()
-                        def storageExternalId = integrationOutput.split("\n")[5].split("|")[2].trim()
+                        def storageIAMUserArn = ""
+                        def storageExternalId = ""
+
+                        integrationOutput.split("\n").each { line ->
+                            if (line.contains("STORAGE_AWS_IAM_USER_ARN")) {
+                                storageIAMUserArn = line.split("\\|")[2].trim()
+                            } else if (line.contains("STORAGE_AWS_EXTERNAL_ID")) {
+                                storageExternalId = line.split("\\|")[2].trim()
+                            }
+                        }
 
                         echo "Storage IAM User ARN: ${storageIAMUserArn}"
                         echo "Storage External ID: ${storageExternalId}"
@@ -51,6 +59,7 @@ pipeline {
                 }
             }
         }
+
         stage('Update Trust Relationship in IAM Role') {
             steps {
                 script {
