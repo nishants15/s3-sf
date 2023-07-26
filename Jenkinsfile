@@ -1,5 +1,31 @@
 import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder
-import com.amazonaws.services.identitymanagement.model.GetRoleRequest
+
+def awsiamGetRole(String roleName) {
+    def iamClient = AmazonIdentityManagementClientBuilder.defaultClient()
+    def getRoleRequest = new GetRoleRequest().withRoleName(roleName)
+    def getRoleResult = iamClient.getRole(getRoleRequest)
+    return getRoleResult.getRole().getArn()
+}
+
+def updateTrustPolicyForRole(roleArn, trustPolicy) {
+    def policyDoc = [
+        roleName: roleArn,
+        policyDocument: trustPolicy
+    ]
+
+    def updatedPolicyResponse = awsiamUpdateAssumeRolePolicy(policyDoc)
+    def updatedTrustPolicy = updatedPolicyResponse.get('AssumeRolePolicyDocument')
+
+    return updatedTrustPolicy
+}
+
+def updateRoleTrustRelationship(roleName, trustPolicy) {
+    def roleArn = awsiamGetRole(roleName)
+    def updatedTrustPolicy = updateTrustPolicyForRole(roleArn, trustPolicy)
+
+    echo "Updated trust policy for IAM role '${roleName}':"
+    echo updatedTrustPolicy
+}
 
 pipeline {
     agent any
@@ -68,7 +94,6 @@ pipeline {
 
                         echo "Storage IAM User ARN: ${STORAGE_AWS_IAM_USER_ARN}"
                         echo "Storage External ID: ${STORAGE_AWS_EXTERNAL_ID}"
-
                     }
                 }
             }
@@ -98,11 +123,7 @@ pipeline {
                             ]
                         }"""
 
-                        def roleArn = awsiamGetRole(roleName: roleName).arn
-                        def updatedTrustPolicy = updateTrustPolicyForRole(roleArn, trustPolicy)
-
-                        echo "Updated trust policy for IAM role '${roleName}':"
-                        echo updatedTrustPolicy
+                        updateRoleTrustRelationship(roleName, trustPolicy)
                     }
                 }
             }
@@ -114,18 +135,4 @@ def attachPolicyToRole(roleName, policyName) {
     withAWS(credentials: 'aws_credentials') {
         sh "aws iam attach-role-policy --role-name ${roleName} --policy-arn arn:aws:iam::988231236474:policy/${policyName}"
     }
-}
-
-def updateTrustPolicyForRole(roleArn, trustPolicy) {
-    def policyName = "AssumeRolePolicyDocument"
-    def policyDoc = [
-        roleName: roleArn,
-        policyName: policyName,
-        policyDocument: trustPolicy
-    ]
-
-    def updatedPolicyResponse = awsiamUpdateAssumeRolePolicy(policyDoc)
-    def updatedTrustPolicy = updatedPolicyResponse.get('AssumeRolePolicyDocument')
-
-    return updatedTrustPolicy
 }
