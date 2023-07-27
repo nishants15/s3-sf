@@ -15,7 +15,7 @@ pipeline {
 
                         sh "aws iam create-role --role-name ${roleName} --assume-role-policy-document '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"ec2.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}'"
 
-                        sh "aws iam attach-role-policy --role-name ${roleName} --policy-arn arn:aws:iam::YOUR_ACCOUNT_ID:policy/snowpolicy"
+                        sh "aws iam attach-role-policy --role-name ${roleName} --policy-arn arn:aws:iam::988231236474:policy/snowpolicy"
 
                         echo "IAM Role '${roleName}' with attached policy 'snowpolicy' created successfully."
                     }
