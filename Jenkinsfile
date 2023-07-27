@@ -97,16 +97,9 @@ pipeline {
                         }
                         """.trim().replace('\"', '\\\"') // Escape double quotes
 
-                        def existingPolicy = sh(script: "aws iam get-role --role-name ${roleName}", returnStdout: true).trim()
-                        def existingPolicyJson = readJSON(text: existingPolicy)
+                        sh "aws iam update-role --role-name ${roleName} --assume-role-policy-document '${trustPolicy}'"
 
-                        existingPolicyJson.AssumeRolePolicyDocument = trustPolicy
-
-                        def updatedPolicyJson = groovy.json.JsonOutput.toJson(existingPolicyJson)
-
-                        sh "aws iam update-assume-role-policy --role-name ${roleName} --policy-document '${updatedPolicyJson}'"
-
-                        echo "Trust relationship updated and saved for IAM Role '${roleName}'."
+                        echo "Trust relationship updated for IAM Role '${roleName}'."
                     }
                 }
             }
