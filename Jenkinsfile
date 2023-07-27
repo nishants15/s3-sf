@@ -1,33 +1,3 @@
-import com.amazonaws.services.identitymanagement.AmazonIdentityManagementClientBuilder
-import com.amazonaws.services.identitymanagement.model.GetRoleRequest
-
-def awsiamGetRole(String roleName) {
-    def iamClient = AmazonIdentityManagementClientBuilder.defaultClient()
-    def getRoleRequest = new GetRoleRequest().withRoleName(roleName)
-    def getRoleResult = iamClient.getRole(getRoleRequest)
-    return getRoleResult.getRole().getArn()
-}
-
-def updateTrustPolicyForRole(roleArn, trustPolicy) {
-    def policyDoc = [
-        roleName: roleArn,
-        policyDocument: trustPolicy
-    ]
-
-    def updatedPolicyResponse = awsiamUpdateAssumeRolePolicy(policyDoc)
-    def updatedTrustPolicy = updatedPolicyResponse.get('AssumeRolePolicyDocument')
-
-    return updatedTrustPolicy
-}
-
-def updateRoleTrustRelationship(roleName, trustPolicy) {
-    def roleArn = awsiamGetRole(roleName)
-    def updatedTrustPolicy = updateTrustPolicyForRole(roleArn, trustPolicy)
-
-    echo "Updated trust policy for IAM role '${roleName}':"
-    echo updatedTrustPolicy
-}
-
 pipeline {
     agent any
 
@@ -77,8 +47,7 @@ pipeline {
                             returnStdout: true
                         )
 
-                        echo "Integration Output: ${integrationOutput}"
-
+                        // Extract STORAGE_AWS_IAM_USER_ARN
                         def arnMatcher = integrationOutput =~ /STORAGE_AWS_IAM_USER_ARN\s+\|\s+(\S+)/
                         if (arnMatcher) {
                             STORAGE_AWS_IAM_USER_ARN = arnMatcher[0][1]
@@ -86,6 +55,7 @@ pipeline {
                             echo "Failed to find STORAGE_AWS_IAM_USER_ARN"
                         }
 
+                        // Extract STORAGE_AWS_EXTERNAL_ID
                         def idMatcher = integrationOutput =~ /STORAGE_AWS_EXTERNAL_ID\s+\|\s+(\S+)/
                         if (idMatcher) {
                             STORAGE_AWS_EXTERNAL_ID = idMatcher[0][1]
@@ -104,8 +74,9 @@ pipeline {
             steps {
                 script {
                     withAWS(credentials: 'aws_credentials') {
-                        def roleName = "snowflake-role"
-                        def trustPolicy = """{
+                        // Update the trust relationship using STORAGE_AWS_EXTERNAL_ID and STORAGE_AWS_IAM_USER_ARN
+                        sh """
+                        aws iam update-assume-role-policy --role-name snowflake-role --policy-document '{
                             \"Version\": \"2012-10-17\",
                             \"Statement\": [
                                 {
@@ -122,18 +93,11 @@ pipeline {
                                     }
                                 }
                             ]
-                        }"""
-
-                        updateRoleTrustRelationship(roleName, trustPolicy)
+                        }'
+                        """
                     }
                 }
             }
         }
-    }
-}
-
-def attachPolicyToRole(roleName, policyName) {
-    withAWS(credentials: 'aws_credentials') {
-        sh "aws iam attach-role-policy --role-name ${roleName} --policy-arn arn:aws:iam::988231236474:policy/${policyName}"
     }
 }
