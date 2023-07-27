@@ -38,8 +38,8 @@ pipeline {
                 }
             }
         }
-    }
-}
+    
+
 
         stage('Create Snowflake Storage Integration') {
             steps {
