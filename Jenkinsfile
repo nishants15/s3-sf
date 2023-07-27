@@ -11,7 +11,7 @@ pipeline {
         stage('Create IAM Role') {
             steps {
                 script {
-                    def trustPolicy = '''
+                    def trustPolicy = """
                     {
                         "Version": "2012-10-17",
                         "Statement": [
@@ -29,7 +29,7 @@ pipeline {
                             }
                         ]
                     }
-                    '''
+                    """
 
                     def roleName = "${ROLE_NAME}"
 
