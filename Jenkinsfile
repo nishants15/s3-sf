@@ -15,7 +15,7 @@ pipeline {
 
                         sh "aws iam create-role --role-name ${roleName} --assume-role-policy-document '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"ec2.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}'"
 
-                        attachPolicyToRole(roleName, "snowpolicy")
+                        sh "aws iam attach-role-policy --role-name ${roleName} --policy-arn arn:aws:iam::YOUR_ACCOUNT_ID:policy/snowpolicy"
 
                         echo "IAM Role '${roleName}' with attached policy 'snowpolicy' created successfully."
                     }
@@ -39,6 +39,7 @@ pipeline {
                 }
             }
         }
+
         stage('Retrieve IAM User ARN and External ID') {
             steps {
                 script {
@@ -53,7 +54,7 @@ pipeline {
                         if (arnMatcher) {
                             STORAGE_AWS_IAM_USER_ARN = arnMatcher[0][1]
                         } else {
-                            echo "Failed to find STORAGE_AWS_IAM_USER_ARN"
+                            error "Failed to find STORAGE_AWS_IAM_USER_ARN"
                         }
 
                         // Extract STORAGE_AWS_EXTERNAL_ID
@@ -61,7 +62,7 @@ pipeline {
                         if (idMatcher) {
                             STORAGE_AWS_EXTERNAL_ID = idMatcher[0][1]
                         } else {
-                            echo "Failed to find STORAGE_AWS_EXTERNAL_ID"
+                            error "Failed to find STORAGE_AWS_EXTERNAL_ID"
                         }
 
                         echo "Storage IAM User ARN: ${STORAGE_AWS_IAM_USER_ARN}"
