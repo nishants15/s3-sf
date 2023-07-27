@@ -73,33 +73,36 @@ pipeline {
         }
 
         stage('Update Trust Relationship in IAM Role') {
-            steps {
-                script {
-                    withAWS(credentials: 'aws_credentials') {
-                        def roleName = "snowflake-role"
-                        def trustPolicy = """{
-                            \"Version\": \"2012-10-17\",
-                            \"Statement\": [
-                                {
-                                    \"Effect\": \"Allow\",
-                                    \"Principal\": {
-                                        \"AWS\": \"${STORAGE_AWS_IAM_USER_ARN}\"
-                                    },
-                                    \"Action\": \"sts:AssumeRole\",
-                                    \"Condition\": {
-                                        \"StringEquals\": {
-                                            \"sts:ExternalId\": \"${STORAGE_AWS_EXTERNAL_ID}\"
-                                        }
-                                    }
+    steps {
+        script {
+            withAWS(credentials: 'aws_credentials') {
+                def roleName = "snowflake-role"
+                def trustPolicy = """{
+                    \"Version\": \"2012-10-17\",
+                    \"Statement\": [
+                        {
+                            \"Effect\": \"Allow\",
+                            \"Principal\": {
+                                \"AWS\": \"${STORAGE_AWS_IAM_USER_ARN}\"
+                            },
+                            \"Action\": \"sts:AssumeRole\",
+                            \"Condition\": {
+                                \"StringEquals\": {
+                                    \"sts:ExternalId\": \"${STORAGE_AWS_EXTERNAL_ID}\"
                                 }
-                            ]
-                        }""".replace('\n', '').replace(' ', '')
+                            }
+                        }
+                    ]
+                }""".replace('\n', '').replace(' ', '')
 
-                        sh "aws iam update-role --role-name ${roleName} --assume-role-policy-document '${trustPolicy}'"
+                // Create a JSON file with the trust policy
+                def trustPolicyFile = 'trust-policy.json'
+                writeFile file: trustPolicyFile, text: trustPolicy
 
-                        echo "Trust relationship updated for IAM Role '${roleName}'."
-                    }
-                }
+                // Use the --cli-input-json option to update the role with the trust policy
+                sh "aws iam update-role --role-name ${roleName} --cli-input-json file://${trustPolicyFile}"
+
+                echo "Trust relationship updated for IAM Role '${roleName}'."
             }
         }
     }
