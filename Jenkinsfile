@@ -8,14 +8,6 @@ def awsiamGetRole(String roleName) {
     return getRoleResult.getRole().getArn()
 }
 
-
-def awsiamGetRole(String roleName) {
-    def iamClient = AmazonIdentityManagementClientBuilder.defaultClient()
-    def getRoleRequest = new GetRoleRequest().withRoleName(roleName)
-    def getRoleResult = iamClient.getRole(getRoleRequest)
-    return getRoleResult.getRole().getArn()
-}
-
 def updateTrustPolicyForRole(roleArn, trustPolicy) {
     def policyDoc = [
         roleName: roleArn,
