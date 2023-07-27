@@ -76,33 +76,40 @@ pipeline {
             steps {
                 script {
                     withAWS(credentials: 'aws_credentials') {
-                        def roleName = "snowflake-role"
+                        def oldRoleName = "snowflake-role"
+                        def newRoleName = "${oldRoleName}-new"
+
+                        // Step 1: Create a new role with the updated trust policy
                         def trustPolicy = """{
-                            \"Version\": \"2012-10-17\",
-                            \"Statement\": [
+                            "Version": "2012-10-17",
+                            "Statement": [
                                 {
-                                    \"Effect\": \"Allow\",
-                                    \"Principal\": {
-                                        \"AWS\": \"${STORAGE_AWS_IAM_USER_ARN}\"
+                                    "Effect": "Allow",
+                                    "Principal": {
+                                        "AWS": "${STORAGE_AWS_IAM_USER_ARN}"
                                     },
-                                    \"Action\": \"sts:AssumeRole\",
-                                    \"Condition\": {
-                                        \"StringEquals\": {
-                                            \"sts:ExternalId\": \"${STORAGE_AWS_EXTERNAL_ID}\"
+                                    "Action": "sts:AssumeRole",
+                                    "Condition": {
+                                        "StringEquals": {
+                                            "sts:ExternalId": "${STORAGE_AWS_EXTERNAL_ID}"
                                         }
                                     }
                                 }
                             ]
-                        }""".replace('\n', '').replace(' ', '')
+                        }"""
 
-                        // Create a JSON file with the trust policy
-                        def trustPolicyFile = 'trust-policy.json'
-                        writeFile file: trustPolicyFile, text: trustPolicy
+                        sh "aws iam create-role --role-name ${newRoleName} --assume-role-policy-document '${trustPolicy}'"
 
-                        // Use the --cli-input-json option to update the role with the trust policy
-                        sh "aws iam update-role --role-name ${roleName} --cli-input-json file://${trustPolicyFile}"
+                        // Step 2: Attach policies from the old role to the new role
+                        sh "aws iam list-attached-role-policies --role-name ${oldRoleName} --query 'AttachedPolicies[*].PolicyArn' --output text | while read policyArn; do aws iam attach-role-policy --role-name ${newRoleName} --policy-arn $policyArn; done"
 
-                        echo "Trust relationship updated for IAM Role '${roleName}'."
+                        // Step 3: Remove old role
+                        sh "aws iam delete-role --role-name ${oldRoleName}"
+
+                        // Step 4: Rename new role to match the original name
+                        sh "aws iam update-role --role-name ${newRoleName} --new-role-name ${oldRoleName}"
+
+                        echo "Trust relationship updated for IAM Role '${oldRoleName}'."
                     }
                 }
             }
