@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     environment {
+        ROLE_NAME = "snowflake-role-new"
         STORAGE_AWS_IAM_USER_ARN = ""  // Declare the variable here
         STORAGE_AWS_EXTERNAL_ID = ""   // Declare the variable here
     }
@@ -10,15 +11,34 @@ pipeline {
         stage('Create IAM Role') {
             steps {
                 script {
-                    withAWS(credentials: 'aws_credentials') {
-                        def roleName = "snowflake-role"
-
-                        sh "aws iam create-role --role-name ${roleName} --assume-role-policy-document '{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"ec2.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}'"
-
-                        sh "aws iam attach-role-policy --role-name ${roleName} --policy-arn arn:aws:iam::988231236474:policy/snowpolicy"
-
-                        echo "IAM Role '${roleName}' with attached policy 'snowpolicy' created successfully."
+                    def trustPolicy = '''
+                    {
+                        "Version": "2012-10-17",
+                        "Statement": [
+                            {
+                                "Effect": "Allow",
+                                "Principal": {
+                                    "AWS": "<STORAGE_AWS_IAM_USER_ARN>"
+                                },
+                                "Action": "sts:AssumeRole",
+                                "Condition": {
+                                    "StringEquals": {
+                                        "sts:ExternalId": "<STORAGE_AWS_EXTERNAL_ID>"
+                                    }
+                                }
+                            }
+                        ]
                     }
+                    '''
+
+                    def roleName = "${ROLE_NAME}"
+
+                    // Create the IAM Role
+                    withAWS(credentials: 'aws_credentials') {
+                        sh "aws iam create-role --role-name ${roleName} --assume-role-policy-document '${trustPolicy}'"
+                    }
+
+                    echo "IAM Role '${roleName}' with trust policy created successfully."
                 }
             }
         }
@@ -32,7 +52,7 @@ pipeline {
                             TYPE = EXTERNAL_STAGE
                             STORAGE_PROVIDER = S3
                             ENABLED = TRUE 
-                            STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::988231236474:role/snowflake-role'
+                            STORAGE_AWS_ROLE_ARN = 'arn:aws:iam::988231236474:role/snowflake-role-new'
                             STORAGE_ALLOWED_LOCATIONS = ('s3://snowflake-input12')"
                         '''
                     }
@@ -76,40 +96,16 @@ pipeline {
             steps {
                 script {
                     withAWS(credentials: 'aws_credentials') {
-                        def oldRoleName = "snowflake-role"
-                        def newRoleName = "${oldRoleName}-new"
+                        def trustPolicy = readFile('trust-policy.json')
+                        def roleName = "${ROLE_NAME}"
 
-                        // Step 1: Create a new role with the updated trust policy
-                        def trustPolicy = """{
-                            "Version": "2012-10-17",
-                            "Statement": [
-                                {
-                                    "Effect": "Allow",
-                                    "Principal": {
-                                        "AWS": "${STORAGE_AWS_IAM_USER_ARN}"
-                                    },
-                                    "Action": "sts:AssumeRole",
-                                    "Condition": {
-                                        "StringEquals": {
-                                            "sts:ExternalId": "${STORAGE_AWS_EXTERNAL_ID}"
-                                        }
-                                    }
-                                }
-                            ]
-                        }"""
+                        // Update the trust policy of the IAM role
+                        trustPolicy = trustPolicy.replace("<STORAGE_AWS_IAM_USER_ARN>", "${STORAGE_AWS_IAM_USER_ARN}")
+                        trustPolicy = trustPolicy.replace("<STORAGE_AWS_EXTERNAL_ID>", "${STORAGE_AWS_EXTERNAL_ID}")
 
-                        sh "aws iam create-role --role-name ${newRoleName} --assume-role-policy-document '${trustPolicy}'"
+                        sh "aws iam update-assume-role-policy --role-name ${roleName} --policy-document '${trustPolicy}'"
 
-                        // Step 2: Attach policies from the old role to the new role
-                        sh "aws iam list-attached-role-policies --role-name ${oldRoleName} --query 'AttachedPolicies[*].PolicyArn' --output text | while read policyArn; do aws iam attach-role-policy --role-name ${newRoleName} --policy-arn $policyArn; done"
-
-                        // Step 3: Remove old role
-                        sh "aws iam delete-role --role-name ${oldRoleName}"
-
-                        // Step 4: Rename new role to match the original name
-                        sh "aws iam update-role --role-name ${newRoleName} --new-role-name ${oldRoleName}"
-
-                        echo "Trust relationship updated for IAM Role '${oldRoleName}'."
+                        echo "Trust relationship updated for IAM Role '${roleName}'."
                     }
                 }
             }
