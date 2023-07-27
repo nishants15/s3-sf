@@ -95,7 +95,7 @@ pipeline {
                                 }
                             ]
                         }
-                        """
+                        """.trim() // Remove leading spaces using trim()
 
                         sh "aws iam update-assume-role-policy --role-name ${roleName} --policy-document '${trustPolicy}'"
 
