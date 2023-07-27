@@ -11,37 +11,35 @@ pipeline {
         stage('Create IAM Role') {
             steps {
                 script {
-                    def trustPolicy = """
-                    {
-                        "Version": "2012-10-17",
-                        "Statement": [
-                            {
-                                "Effect": "Allow",
-                                "Principal": {
-                                    "AWS": "<STORAGE_AWS_IAM_USER_ARN>"
-                                },
-                                "Action": "sts:AssumeRole",
-                                "Condition": {
-                                    "StringEquals": {
-                                        "sts:ExternalId": "<STORAGE_AWS_EXTERNAL_ID>"
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                    """
-
-                    def roleName = "${ROLE_NAME}"
-
-                    // Create the IAM Role
                     withAWS(credentials: 'aws_credentials') {
-                        sh "aws iam create-role --role-name ${roleName} --assume-role-policy-document '${trustPolicy}'"
-                    }
+                        def roleName = "${ROLE_NAME}"
+                        def assumeRolePolicyDocument = """
+                        {
+                            \"Version\": \"2012-10-17\",
+                            \"Statement\": [
+                                {
+                                    \"Effect\": \"Allow\",
+                                    \"Principal\": {
+                                        \"Service\": \"ec2.amazonaws.com\"
+                                    },
+                                    \"Action\": \"sts:AssumeRole\"
+                                }
+                            ]
+                        }
+                        """
 
-                    echo "IAM Role '${roleName}' with trust policy created successfully."
+                        // Remove leading spaces from the JSON policy document
+                        assumeRolePolicyDocument = assumeRolePolicyDocument.trim()
+
+                        sh "aws iam create-role --role-name ${roleName} --assume-role-policy-document '${assumeRolePolicyDocument}'"
+
+                        echo "IAM Role '${roleName}' created successfully."
+                    }
                 }
             }
         }
+    }
+}
 
         stage('Create Snowflake Storage Integration') {
             steps {
