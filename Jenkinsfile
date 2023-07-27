@@ -72,33 +72,35 @@ pipeline {
         }
 
         stage('Update Trust Relationship in IAM Role') {
-    steps {
-        script {
-            withAWS(credentials: 'aws_credentials') {
-                def roleName = "snowflake-role"
-                def trustPolicy = """
-                {
-                    "Version": "2012-10-17",
-                    "Statement": [
+            steps {
+                script {
+                    withAWS(credentials: 'aws_credentials') {
+                        def roleName = "snowflake-role"
+                        def trustPolicy = """
                         {
-                            "Effect": "Allow",
-                            "Principal": {
-                                "AWS": "${STORAGE_AWS_IAM_USER_ARN}"
-                            },
-                            "Action": "sts:AssumeRole",
-                            "Condition": {
-                                "StringEquals": {
-                                    "sts:ExternalId": "${STORAGE_AWS_EXTERNAL_ID}"
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Principal": {
+                                        "AWS": "${STORAGE_AWS_IAM_USER_ARN}"
+                                    },
+                                    "Action": "sts:AssumeRole",
+                                    "Condition": {
+                                        "StringEquals": {
+                                            "sts:ExternalId": "${STORAGE_AWS_EXTERNAL_ID}"
+                                        }
+                                    }
                                 }
-                            }
+                            ]
                         }
-                    ]
+                        """
+
+                        sh "aws iam update-assume-role-policy --role-name ${roleName} --policy-document '${trustPolicy}'"
+
+                        echo "Trust relationship updated for IAM Role '${roleName}'."
+                    }
                 }
-                """
-
-                sh "aws iam update-assume-role-policy --role-name ${roleName} --policy-document '${trustPolicy}'"
-
-                echo "Trust relationship updated for IAM Role '${roleName}'."
             }
         }
     }
