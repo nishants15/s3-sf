@@ -77,25 +77,23 @@ pipeline {
                 script {
                     withAWS(credentials: 'aws_credentials') {
                         def roleName = "snowflake-role"
-                        def trustPolicy = """
-                        {
-                            "Version": "2012-10-17",
-                            "Statement": [
+                        def trustPolicy = """{
+                            \"Version\": \"2012-10-17\",
+                            \"Statement\": [
                                 {
-                                    "Effect": "Allow",
-                                    "Principal": {
-                                        "AWS": "${STORAGE_AWS_IAM_USER_ARN}"
+                                    \"Effect\": \"Allow\",
+                                    \"Principal\": {
+                                        \"AWS\": \"${STORAGE_AWS_IAM_USER_ARN}\"
                                     },
-                                    "Action": "sts:AssumeRole",
-                                    "Condition": {
-                                        "StringEquals": {
-                                            "sts:ExternalId": "${STORAGE_AWS_EXTERNAL_ID}"
+                                    \"Action\": \"sts:AssumeRole\",
+                                    \"Condition\": {
+                                        \"StringEquals\": {
+                                            \"sts:ExternalId\": \"${STORAGE_AWS_EXTERNAL_ID}\"
                                         }
                                     }
                                 }
                             ]
-                        }
-                        """.trim().replace('\"', '\\\"') // Escape double quotes
+                        }""".replace('\n', '').replace(' ', '')
 
                         sh "aws iam update-role --role-name ${roleName} --assume-role-policy-document '${trustPolicy}'"
 
